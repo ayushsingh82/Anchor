@@ -132,6 +132,40 @@ export default function LandingPage() {
           </span>
         </div>
       </div>
+
+      <section className="how" id="how">
+        <p className="how-label">{'// How it works'}</p>
+        <h2>Three native KeeperHub steps, one schedule.</h2>
+        <div className="step-grid">
+          <div className="step-card glass">
+            <span className="step-num glass">1</span>
+            <h3>Check</h3>
+            <p>
+              A Schedule trigger runs Pendle&apos;s <code>is-pt-expired</code> read
+              action periodically — no polling infrastructure to run ourselves.
+            </p>
+            <span className="step-tag">is-pt-expired</span>
+          </div>
+          <div className="step-card glass">
+            <span className="step-num glass">2</span>
+            <h3>Redeem</h3>
+            <p>
+              Once matured, <code>redeem-pt-yt-to-sy</code> converts the expired PT
+              and YT back to the underlying SY through KeeperHub&apos;s Turnkey wallet.
+            </p>
+            <span className="step-tag">redeem-pt-yt-to-sy</span>
+          </div>
+          <div className="step-card glass">
+            <span className="step-num glass">3</span>
+            <h3>Roll</h3>
+            <p>
+              That SY goes straight back in via <code>mint-pt-yt-from-sy</code>, into
+              the next market&apos;s PT/YT — the position keeps earning, unattended.
+            </p>
+            <span className="step-tag">mint-pt-yt-from-sy</span>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
