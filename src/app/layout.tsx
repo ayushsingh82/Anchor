@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pendle Roller",
-  description: "Auto-redeem and roll matured Pendle PT positions, executed through KeeperHub.",
+  title: "Anchor",
+  description: "DeFi positions that never go stale — Pendle, Aave, and Superfluid, kept upright by KeeperHub.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
