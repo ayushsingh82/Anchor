@@ -1,5 +1,5 @@
-import type { WorkflowDefinition } from '../types'
-import { PENDLE_PLUGIN_ID, PendleAction } from '../pendle'
+import type { WorkflowDefinition } from '../../types'
+import { PENDLE_PLUGIN_ID, PendleAction } from './actions'
 
 export interface PendleRolloverConfig {
   /** Wallet whose PT position is being rolled. */
