@@ -1,6 +1,8 @@
+<img src="public/anchor-glyph.svg" width="56" height="56" alt="Anchor" />
+
 # Anchor
 
-**DeFi positions need upkeep nobody remembers to do. Anchor watches three protocols and fixes it — for real, through [KeeperHub](https://keeperhub.com).**
+**Positions on Pendle, Aave, and Superfluid don't sleep. Powered by [KeeperHub](https://keeperhub.com), neither does their upkeep.**
 
 Built for [KeeperHub — The Agent Economy Hackathon](https://dorahacks.io) (Sep 6–18, 2026), main track: *Best Integration into a Live Project*.
 

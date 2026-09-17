@@ -25,6 +25,21 @@ function ProtocolBadge({ letter, color }: { letter: string; color: string }) {
   )
 }
 
+/** The Anchor Glyph mark: a ring and two strokes. See /logo for the other five options considered. */
+function AnchorGlyph() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 56 56" fill="none" aria-hidden="true">
+      <circle cx="28" cy="12" r="5" stroke="currentColor" strokeWidth="4" />
+      <path
+        d="M28 17V44M14 32c0 8 6.3 12 14 12s14-4 14-12M14 32h6M42 32h-6"
+        stroke="currentColor"
+        strokeWidth="4"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
 const PROTOCOLS = [
   {
     id: 'pendle',
@@ -85,6 +100,7 @@ export default function LandingPage() {
     <div className="hero">
       <header className="nav">
         <a className="logo" href="#">
+          <AnchorGlyph />
           Anchor
         </a>
         <nav className="nav-links" aria-label="Primary">
@@ -134,8 +150,8 @@ export default function LandingPage() {
           </span>
         </h1>
         <p className="hero-sub">
-          DeFi positions need upkeep nobody remembers to do. Anchor watches three
-          protocols and fixes it — for real, through KeeperHub.
+          Positions on Pendle, Aave, and Superfluid don&rsquo;t sleep. Powered by
+          KeeperHub, neither does their upkeep.
         </p>
         <div className="ctas">
           <a className="btn btn-primary" href="#how">

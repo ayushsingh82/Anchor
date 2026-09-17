@@ -106,12 +106,28 @@ be safer for a live demo if the plugin's Pendle deployment supports one.
 
 ## Left — before this can execute anything real
 
-- [ ] **No live KeeperHub account/API key wired in.** Everything in
-      `src/lib/keeperhub/` is written against the documented (and now,
-      for the condition node, source-verified) API shape but has never
-      been run against a real organization. This is the actual blocker
-      for the submission's required "link to a transaction executed
-      through KeeperHub."
+- [x] ~~No live KeeperHub account/API key wired in~~ — resolved. A real
+      org API key (`Write` scope, `mcp:read`/`mcp:write`) is in
+      `.env.local` (gitignored, never committed) and confirmed live:
+      `GET /api/workflows` returns 200 against `app.keeperhub.com`, so
+      `client.ts`'s REST shape is correct against the real API, not just
+      docs.
+- [ ] **Wallet is funded with nothing.** `GET /api/user/wallet` confirms
+      the org's Turnkey-managed wallet: `0x41fa117719bc134fc8a7e067227ded1fc0355b45`
+      (created 2026-09-17). `GET /api/user/wallet/balances` shows **zero
+      balance on every chain KeeperHub supports, mainnet and testnet** —
+      no gas, no stablecoins anywhere. (Tempo/Tempo Testnet report a
+      garbage `nativeBalanceRaw` of repeating "42"s — not real funds,
+      disregarded.) This is now the actual hard blocker for the
+      submission's required "link to a transaction executed through
+      KeeperHub": nothing can execute without gas. Two automated
+      no-auth-faucet attempts (Base's own faucet endpoint, QuickNode's
+      API) both failed as expected — real faucets gate behind
+      CAPTCHA/wallet-connect specifically to stop scripted draining.
+      Waiting on manual funding: send Base Sepolia testnet ETH to the
+      address above via https://www.base.org/faucet or
+      https://www.alchemy.com/faucets/base-sepolia, then the plan is to
+      trigger a real workflow and capture the resulting tx hash.
 - [ ] **Pendle market + YT addresses** for both the expiring and next
       market — pick these live from app.pendle.finance right before the
       demo, not now (see the gathered-addresses section above).
