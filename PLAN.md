@@ -37,6 +37,9 @@ routine upkeep nobody remembers to do, so KeeperHub does it on a schedule.
       package.json / branding updated to match
 - [x] Git history for this repo was squashed to a clean 10-commit
       progression earlier in the build (no leftover unrelated history)
+- [x] Unit tests for all three workflow builders (`*/workflow.test.ts`,
+      Vitest) — 13 tests, verifying node wiring, correct plugin/action IDs,
+      and that config values propagate correctly. `npm test`.
 
 ## Explicitly declined
 
@@ -60,22 +63,31 @@ the canonical open-source registry the Aave ecosystem itself uses):
 - USDC (underlying): `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`
 
 **Superfluid — all chains** (forwarder addresses are identical everywhere
-per KeeperHub's own plugin docs; confirmed against Etherscan):
-- CFAv1Forwarder: `0xcfA132E353cB4E398080B9700609bb008eceB125`
-- GDAv1Forwarder: not yet confirmed — the metadata source checked was stale
-  (only had an old Base Goerli testnet entry). Needs a fresh lookup against
-  `docs.superfluid.org/docs/protocol/contract-addresses` or the Superfluid
-  Explorer directly (both are JS-rendered, couldn't be scraped by the fetch
-  tool available in this session — needs a browser, not automated fetch).
+per KeeperHub's own plugin docs):
+- CFAv1Forwarder: `0xcfA132E353cB4E398080B9700609bb008eceB125` — confirmed
+  directly against Etherscan (primary source).
+- GDAv1Forwarder: `0x6DA13Bde224A05a288748d857b9e7DDEffd1dE08` — confirmed
+  directly against Etherscan (verified contract name matches).
 - No specific SuperToken (e.g. USDCx on Base) address confirmed yet — per
   the plugin docs this is "user-provided" per workflow anyway, so it can be
   picked directly in the KeeperHub app rather than hardcoded here.
 
-**Pendle** — not yet gathered. Unlike Aave/Superfluid, Pendle markets
-expire and get replaced regularly, so a hardcoded address would go stale;
-the right move is picking a live, currently-active market directly from
-[app.pendle.finance](https://app.pendle.finance) at build/demo time rather
-than baking one into this repo now.
+**Pendle — Ethereum mainnet** (from Pendle's own public API,
+`api-v2.pendle.finance/core/v1/1/markets/active`), three currently-active
+markets as of this session:
+
+| Market | Address | YT | Expiry |
+|---|---|---|---|
+| wstETH | `0x34280882267ffa6383b363e278b027be083bbe3b` | `0x04b7fa1e727d7290d6e24fa9b426d0c940283a95` | 2027-12-30 |
+| ynRWAx | `0xfce3f966a131c46a51b896ceea3917bc4c302577` | `0x2263fdec108939ae8fd0ab41901fa9755203b232` | 2026-10-15 |
+| sYUSD | `0x440a67f76f569b67a993aeaff58d198705ec5fe4` | `0xfa780e1c8169c83dd63ccd22a4b89e2fefdb97b2` | 2026-09-24 |
+
+Still not baked into the workflow config, deliberately: these are
+Ethereum mainnet markets, real value, and Pendle markets churn — the
+"next market to roll into" pairing needs to be picked fresh right before
+the demo (e.g. sYUSD expires 2026-09-24, after the hackathon deadline, so
+it wouldn't even demonstrate the redeem step live). A testnet market would
+be safer for a live demo if the plugin's Pendle deployment supports one.
 
 ## Left — before this can execute anything real
 

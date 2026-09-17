@@ -1,59 +1,62 @@
-# Pendle Roller
+# Anchor
 
-**A Pendle PT position that rolls itself forward — executed through [KeeperHub](https://keeperhub.com).**
+**DeFi positions need upkeep nobody remembers to do. Anchor watches three protocols and fixes it — for real, through [KeeperHub](https://keeperhub.com).**
 
 Built for [KeeperHub — The Agent Economy Hackathon](https://dorahacks.io) (Sep 6–18, 2026), main track: *Best Integration into a Live Project*.
 
 ## The problem
 
-[Pendle](https://www.pendle.finance/) splits a yield-bearing asset into a Principal
-Token (PT) that matures on a fixed date. The moment it matures, the PT just sits
-there — it stops earning yield until someone manually redeems it and rolls into the
-next maturity's PT. That's a real, common "forgot the second step" failure: the
-transaction that would fix it is fully valid, nobody is assigned to run it, so it
-doesn't happen.
+Every DeFi position has some routine maintenance action it eventually needs — and
+nobody is assigned to run it. The transaction that would fix it is fully valid;
+it just never happens:
 
-## What this does
+| Protocol | The decay |
+|---|---|
+| [Pendle](https://www.pendle.finance/) | A Principal Token (PT) matures on a fixed date and instantly stops earning until someone redeems it and rolls into the next maturity's PT. |
+| [Aave V3](https://aave.com/) | A leveraged position's health factor drifts toward liquidation while nobody is watching the dashboard. |
+| [Superfluid](https://www.superfluid.finance/) | A continuous payment stream runs out of buffer and silently stops paying the recipient. |
 
-A KeeperHub workflow that:
-1. **Checks** a PT's maturity on a schedule (Pendle plugin, `is-pt-expired`).
-2. **Redeems** it back to the underlying (SY) once matured (`redeem-pt-yt-to-sy`).
-3. **Rolls** that SY straight into the next market's PT/YT (`mint-pt-yt-from-sy`).
-4. **Notifies** once it's done.
+## What Anchor does
 
-All three Pendle steps are KeeperHub's own native plugin actions — no custom
-contract calls. Live project on the other side: **Pendle**, a real, widely-used
-yield-trading protocol. Value moves through KeeperHub's Turnkey-secured wallet
-infrastructure, not ours.
+One agent, three protocols, the same shape every time: **Schedule → check the
+risk signal → act → notify.**
+
+- **Pendle** — `is-pt-expired` → `redeem-pt-yt-to-sy` → `mint-pt-yt-from-sy` into the next market.
+- **Aave V3** — `getUserAccountData` (watch `healthFactor`) → `repay` before liquidation.
+- **Superfluid** — `get-net-flow` → `wrap` more of the underlying to extend a stream's runway.
+
+Every step above is a native KeeperHub plugin action — no custom contract calls.
+Value moves through KeeperHub's Turnkey-secured, non-custodial wallet
+infrastructure; Anchor's own code only ever reads state and configures/triggers
+workflows.
 
 ## KeeperHub surfaces used
 
-- **Pendle plugin** (`pluginId: "pendle"`) — `is-pt-expired`, `redeem-pt-yt-to-sy`,
-  `mint-pt-yt-from-sy`. See `src/lib/keeperhub/pendle.ts`.
+- **Plugins** — Pendle, Aave V3, Superfluid. Exact action IDs and config
+  shapes confirmed against each plugin's real docs, not guessed. See
+  `src/lib/keeperhub/protocols/*/actions.ts`.
 - **REST API** — `POST /api/workflows/create`, `GET /api/workflows`,
   `GET /api/workflows/{id}/history`. `Authorization: Bearer kh_...`. See
   `src/lib/keeperhub/client.ts`.
-- **MCP server** — `https://app.keeperhub.com/mcp`, used to draft and validate the
-  workflow via `ai_generate_workflow` / `validate_workflow` before creating it for
-  real (see "Status" below for why).
+- **MCP server** — `https://app.keeperhub.com/mcp`, used to draft and validate
+  workflows via `ai_generate_workflow` / `validate_workflow` before ever
+  calling `create_workflow` for real (see Status below for why).
 
-## Status — what's confirmed vs. what isn't yet
+## Status
 
-Built by reading `docs.keeperhub.com` directly rather than guessing:
+Full done/left tracking, including which contract addresses are real
+(pulled from open-source registries) vs. still placeholder, lives in
+[`PLAN.md`](./PLAN.md) — kept current as the build progresses rather than
+duplicated here. Short version:
 
-- ✅ Workflow schema (`nodes`/`edges`, trigger types, action node shape)
-- ✅ Pendle plugin's exact action IDs and config fields for redeem/mint
-- ✅ API auth header format and the create/list/history endpoints
-- ✅ MCP server install command and its tool list
-- ⚠️ **Not yet confirmed**: the exact JSON shape for a Condition/branch node
-  (gating "redeem + mint" on "is expired"), and the exact output-reference
-  template syntax between nodes — both 404'd when checked against the docs
-  directly. Plan: use KeeperHub's own `ai_generate_workflow` MCP tool to draft
-  this part correctly (describe it in plain English, it assembles a valid graph),
-  then `validate_workflow` before ever calling `create_workflow` for real.
-- ⚠️ No live KeeperHub account/API key wired in yet — `src/lib/keeperhub/*` is
-  written against the documented API shape but untested against a real
-  organization. Needed before we have a real proof-of-execution transaction.
+- ✅ Workflow schema, all three protocols' plugin actions, REST client, MCP
+  install — all confirmed against real docs.
+- ⚠️ The condition/branch node's exact JSON shape and the cross-node
+  output-reference syntax are still unconfirmed (both 404'd when checked
+  directly against the docs). Plan: draft it once via KeeperHub's own AI
+  canvas, then reconcile.
+- ⚠️ No live KeeperHub account wired in yet — needed for the submission's
+  required real executed transaction.
 
 ## Getting started
 
@@ -65,14 +68,14 @@ npm run dev
 Requires a KeeperHub account (signup auto-provisions a non-custodial Turnkey
 wallet — see [Getting Started](https://docs.keeperhub.com/getting-started)) and
 an API key from **Settings → Developer → API keys**. Copy `.env.example` to
-`.env.local` and fill in `KEEPERHUB_API_KEY` plus the target Pendle market's
-`YT` addresses.
+`.env.local` and fill in `KEEPERHUB_API_KEY` plus whichever protocol's
+addresses you're targeting.
 
 KeeperHub gives new orgs a monthly sponsored-gas allowance on mainnet, so early
 runs don't need the wallet pre-funded for gas — only for whatever value actually
 moves.
 
-### MCP (for drafting the workflow with AI assistance)
+### MCP (for drafting workflows with AI assistance)
 
 ```bash
 claude mcp add --transport http --scope user keeperhub https://app.keeperhub.com/mcp \
@@ -84,22 +87,26 @@ claude mcp add --transport http --scope user keeperhub https://app.keeperhub.com
 ```
 src/
 ├── app/
-│   ├── page.tsx              Landing page
-│   └── globals.css           Design tokens + entrance animation
+│   ├── page.tsx                        Landing page (hero, 3-protocol section, footer)
+│   └── globals.css                     Design tokens + entrance animation
+├── components/
+│   └── AeroShards.tsx                  Vendored WebGPU background effect (installed, not currently used)
 └── lib/keeperhub/
-    ├── types.ts               Workflow/node/edge types
-    ├── client.ts               REST API client (auth, create/list/history)
-    ├── pendle.ts                Pendle plugin action IDs + config shapes
-    └── workflows/
-        └── pendle-rollover.ts   Draft workflow definition (see Status above)
+    ├── types.ts                        Workflow/node/edge types
+    ├── client.ts                       REST API client (auth, create/list/history)
+    └── protocols/
+        ├── pendle/{actions,workflow}.ts
+        ├── aave/{actions,workflow}.ts
+        └── superfluid/{actions,workflow}.ts
 ```
 
 ## Docs
 
 - Platform overview: https://docs.keeperhub.com/
-- Pendle plugin reference: https://docs.keeperhub.com/plugins/pendle
+- Plugin references: https://docs.keeperhub.com/plugins/pendle · `/aave-v3` · `/superfluid`
 - MCP server: https://docs.keeperhub.com/ai-tools/mcp-server
 - Source: https://github.com/keeperhub/keeperhub
+- This hackathon's rules + platform reference, gathered in one place: [`docs/keeperhub-hackathon.md`](./docs/keeperhub-hackathon.md)
 
 ## License
 
