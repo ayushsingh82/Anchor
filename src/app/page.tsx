@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 function ArrowIcon() {
@@ -15,6 +16,41 @@ function ArrowIcon() {
     </svg>
   )
 }
+
+function ProtocolBadge({ letter, color }: { letter: string; color: string }) {
+  return (
+    <span className="protocol-badge" style={{ background: color }} aria-hidden="true">
+      {letter}
+    </span>
+  )
+}
+
+const PROTOCOLS = [
+  {
+    id: 'pendle',
+    name: 'Pendle',
+    color: '#4c6fff',
+    href: 'https://www.pendle.finance',
+    problem: 'A PT position matures and silently stops earning until someone redeems and rolls it forward.',
+    actions: ['is-pt-expired', 'redeem-pt-yt-to-sy', 'mint-pt-yt-from-sy']
+  },
+  {
+    id: 'aave',
+    name: 'Aave',
+    color: '#2ebac6',
+    href: 'https://aave.com',
+    problem: 'A leveraged position’s health factor drifts toward liquidation while nobody is watching.',
+    actions: ['getUserAccountData', 'repay', 'supply']
+  },
+  {
+    id: 'superfluid',
+    name: 'Superfluid',
+    color: '#12c2e9',
+    href: 'https://www.superfluid.finance',
+    problem: 'A continuous payment stream runs out of buffer and quietly stops paying the recipient.',
+    actions: ['get-flow', 'update-flow']
+  }
+]
 
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -47,27 +83,15 @@ export default function LandingPage() {
 
   return (
     <div className="hero">
-      <div className="hero-bg" aria-hidden="true" />
-      <div className="hero-grid" aria-hidden="true" />
-
       <header className="nav">
         <a className="logo" href="#">
-          Pendle Roller
+          Anchor
         </a>
         <nav className="nav-links" aria-label="Primary">
           <a href="#how">How it works</a>
-          <a href="#workflow">Workflow</a>
-          <a href="#proof">Proof</a>
+          <Link href="/workflow">Workflow</Link>
+          <Link href="/proof">Proof</Link>
         </nav>
-        <div className="nav-actions">
-          <a className="btn btn-quiet" href="https://docs.keeperhub.com" target="_blank" rel="noreferrer">
-            KeeperHub docs
-          </a>
-          <a className="btn btn-primary" href="https://github.com" target="_blank" rel="noreferrer">
-            GitHub
-            <ArrowIcon />
-          </a>
-        </div>
         <button
           className="burger"
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
@@ -83,89 +107,82 @@ export default function LandingPage() {
         <a href="#how" onClick={() => setMenuOpen(false)}>
           How it works
         </a>
-        <a href="#workflow" onClick={() => setMenuOpen(false)}>
+        <Link href="/workflow" onClick={() => setMenuOpen(false)}>
           Workflow
-        </a>
-        <a href="#proof" onClick={() => setMenuOpen(false)}>
+        </Link>
+        <Link href="/proof" onClick={() => setMenuOpen(false)}>
           Proof
-        </a>
+        </Link>
         <a href="https://docs.keeperhub.com" target="_blank" rel="noreferrer">
           KeeperHub docs
         </a>
       </nav>
 
       <div className="hero-inner">
-        <p className="eyebrow">Built on KeeperHub · Pendle plugin</p>
+        <p className="eyebrow">
+          <span className="dot" aria-hidden="true" />
+          Built on KeeperHub · Pendle · Aave · Superfluid
+        </p>
         <h1>
           <span className="ln">
-            <span className="ln-i">Matures. Rolls.</span>
+            <span className="ln-i">Positions that</span>
           </span>
           <span className="ln">
-            <span className="ln-i">Automatically.</span>
+            <span className="ln-i">
+              never go stale<span className="cursor" aria-hidden="true" />
+            </span>
           </span>
         </h1>
         <p className="hero-sub">
-          A Pendle PT position quietly stops earning the moment it matures. This
-          workflow checks maturity on a schedule, redeems it, and rolls straight into
-          the next cycle — a real onchain transaction, executed through KeeperHub,
-          with nobody clicking anything.
+          DeFi positions need upkeep nobody remembers to do. Anchor watches three
+          protocols and fixes it — for real, through KeeperHub.
         </p>
         <div className="ctas">
-          <a className="btn btn-primary" href="#workflow">
-            See the workflow
+          <a className="btn btn-primary" href="#how">
+            See the protocols
             <ArrowIcon />
           </a>
-          <a className="btn btn-ghost" href="#proof">
-            View proof of execution
-            <ArrowIcon />
-          </a>
-        </div>
-        <div className="proof-row">
-          <span>
-            <b>KeeperHub</b> execution layer
-          </span>
-          <span>
-            <b>Pendle</b> plugin, native actions
-          </span>
-          <span>
-            <b>0</b> manual steps at maturity
-          </span>
         </div>
       </div>
 
       <section className="how" id="how">
-        <p className="how-label">{'// How it works'}</p>
-        <h2>Three native KeeperHub steps, one schedule.</h2>
-        <div className="step-grid">
-          <div className="step-card glass">
-            <span className="step-num glass">1</span>
-            <h3>Check</h3>
-            <p>
-              A Schedule trigger runs Pendle&apos;s <code>is-pt-expired</code> read
-              action periodically — no polling infrastructure to run ourselves.
-            </p>
-            <span className="step-tag">is-pt-expired</span>
-          </div>
-          <div className="step-card glass">
-            <span className="step-num glass">2</span>
-            <h3>Redeem</h3>
-            <p>
-              Once matured, <code>redeem-pt-yt-to-sy</code> converts the expired PT
-              and YT back to the underlying SY through KeeperHub&apos;s Turnkey wallet.
-            </p>
-            <span className="step-tag">redeem-pt-yt-to-sy</span>
-          </div>
-          <div className="step-card glass">
-            <span className="step-num glass">3</span>
-            <h3>Roll</h3>
-            <p>
-              That SY goes straight back in via <code>mint-pt-yt-from-sy</code>, into
-              the next market&apos;s PT/YT — the position keeps earning, unattended.
-            </p>
-            <span className="step-tag">mint-pt-yt-from-sy</span>
-          </div>
+        <p className="how-label">How it works</p>
+        <h2>One agent, three protocols, the same fix each time.</h2>
+        <div className="protocol-grid">
+          {PROTOCOLS.map((protocol) => (
+            <div className="protocol-card" key={protocol.id}>
+              <div className="protocol-card-head">
+                <ProtocolBadge letter={protocol.name[0]} color={protocol.color} />
+                <a href={protocol.href} target="_blank" rel="noreferrer" className="protocol-name">
+                  {protocol.name}
+                </a>
+              </div>
+              <p className="protocol-problem">{protocol.problem}</p>
+              <div className="protocol-actions">
+                {protocol.actions.map((action) => (
+                  <code key={action} className="protocol-action">
+                    {action}
+                  </code>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
+
+      <footer className="footer">
+        <div className="footer-row">
+          <span className="logo">Anchor</span>
+          <p>Built on KeeperHub for the Agent Economy Hackathon.</p>
+        </div>
+        <div className="footer-links">
+          <Link href="/workflow">Workflow</Link>
+          <Link href="/proof">Proof</Link>
+          <a href="https://docs.keeperhub.com" target="_blank" rel="noreferrer">
+            KeeperHub docs
+          </a>
+        </div>
+      </footer>
     </div>
   )
 }
