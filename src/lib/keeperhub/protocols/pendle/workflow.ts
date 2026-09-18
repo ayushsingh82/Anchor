@@ -1,4 +1,4 @@
-import type { WorkflowDefinition } from '../../types'
+import { singleRuleCondition, templateRef, type WorkflowDefinition } from '../../types'
 import { PENDLE_PLUGIN_ID, PendleAction } from './actions'
 
 export interface PendleRolloverConfig {
@@ -12,13 +12,14 @@ export interface PendleRolloverConfig {
 }
 
 /**
- * Draft workflow: Schedule -> check expiry -> (if expired) redeem old PT/YT
- * to SY -> mint new PT/YT from that SY -> notify.
+ * Schedule -> check expiry -> (condition: expired) -> redeem old PT/YT to
+ * SY -> mint new PT/YT from that SY.
  *
- * The condition node between "check expiry" and "redeem" is a placeholder
- * (`type: 'condition'`, unconfirmed shape — see src/lib/keeperhub/types.ts).
- * Treat this file as a draft to reconcile against the real JSON once it's
- * been built once in KeeperHub's own AI canvas and exported.
+ * Condition node config and the `{{@nodeId:Label.field}}` template syntax
+ * are both confirmed by reading KeeperHub's own repo directly
+ * (lib/workflow/nodes/condition/{builder-types,resolver}.ts) — both 404'd
+ * against the public docs, so this was verified against the real source
+ * rather than guessed.
  */
 export function buildPendleRolloverWorkflow(config: PendleRolloverConfig): WorkflowDefinition {
   return {
@@ -42,8 +43,32 @@ export function buildPendleRolloverWorkflow(config: PendleRolloverConfig): Workf
           config: { pluginId: PENDLE_PLUGIN_ID, actionId: PendleAction.isPtExpired },
         },
       },
-      // TODO(unconfirmed): condition node gating the next two steps on
-      // check-expired's `expired` output being true.
+      {
+        id: 'gate-expired',
+        type: 'action',
+        data: {
+          label: 'Only if expired',
+          type: 'action',
+          config: singleRuleCondition({
+            leftOperand: templateRef('check-expired', 'Is PT Expired', 'expired'),
+            operator: 'isTrue',
+            rightOperand: '',
+          }) as unknown as Record<string, unknown>,
+        },
+      },
+      {
+        id: 'pt-balance',
+        type: 'action',
+        data: {
+          label: 'Get PT Balance',
+          type: 'action',
+          config: {
+            pluginId: PENDLE_PLUGIN_ID,
+            actionId: PendleAction.getPtBalance,
+            account: config.receiver,
+          },
+        },
+      },
       {
         id: 'redeem',
         type: 'action',
@@ -55,11 +80,28 @@ export function buildPendleRolloverWorkflow(config: PendleRolloverConfig): Workf
             actionId: PendleAction.redeemPtYtToSy,
             receiver: config.receiver,
             YT: config.oldYT,
-            // netPyIn / minSyOut: unconfirmed how to reference "redeem full
-            // balance" — likely needs a preceding get-pt-balance read fed in
-            // via template syntax once that syntax is confirmed.
-            netPyIn: '0',
+            // netPyIn: the full PT balance just read, via the confirmed
+            // `{{@nodeId:Label.field}}` reference syntax — "redeem
+            // everything" rather than a fixed amount.
+            netPyIn: templateRef('pt-balance', 'Get PT Balance', 'balance'),
+            // minSyOut: '0' is a deliberate choice, not a guess — this is a
+            // direct PT/YT->SY redemption inside Pendle itself (no DEX
+            // routing/slippage to bound), and it only fires post-maturity
+            // when the exchange rate is fixed at 1 PT = 1 SY-equivalent.
             minSyOut: '0',
+          },
+        },
+      },
+      {
+        id: 'sy-balance',
+        type: 'action',
+        data: {
+          label: 'Get SY Balance',
+          type: 'action',
+          config: {
+            pluginId: PENDLE_PLUGIN_ID,
+            actionId: PendleAction.getSyBalance,
+            account: config.receiver,
           },
         },
       },
@@ -74,7 +116,13 @@ export function buildPendleRolloverWorkflow(config: PendleRolloverConfig): Workf
             actionId: PendleAction.mintPtYtFromSy,
             receiver: config.receiver,
             YT: config.newYT,
-            netSyIn: '0',
+            // netSyIn: the SY balance produced by the redeem above, read
+            // fresh rather than assumed — same reasoning as netPyIn.
+            netSyIn: templateRef('sy-balance', 'Get SY Balance', 'balance'),
+            // minPyOut: '0', same rationale as minSyOut above; this market
+            // hasn't matured yet so there's no fixed exchange rate to bound
+            // against without an extra price-impact estimate this
+            // workflow doesn't compute.
             minPyOut: '0',
           },
         },
@@ -82,8 +130,11 @@ export function buildPendleRolloverWorkflow(config: PendleRolloverConfig): Workf
     ],
     edges: [
       { id: 'e1', source: 'trigger', target: 'check-expired' },
-      { id: 'e2', source: 'check-expired', target: 'redeem' },
-      { id: 'e3', source: 'redeem', target: 'mint-new' },
+      { id: 'e2', source: 'check-expired', target: 'gate-expired' },
+      { id: 'e3', source: 'gate-expired', target: 'pt-balance' },
+      { id: 'e4', source: 'pt-balance', target: 'redeem' },
+      { id: 'e5', source: 'redeem', target: 'sy-balance' },
+      { id: 'e6', source: 'sy-balance', target: 'mint-new' },
     ],
   }
 }

@@ -1,4 +1,4 @@
-import type { WorkflowDefinition } from '../../types'
+import { singleRuleCondition, templateRef, type WorkflowDefinition } from '../../types'
 import { SUPERFLUID_PLUGIN_ID, SuperfluidAction } from './actions'
 
 export interface SuperfluidGuardianConfig {
@@ -12,17 +12,16 @@ export interface SuperfluidGuardianConfig {
 }
 
 /**
- * Draft workflow: Schedule -> read net flow -> (if negative, i.e. net
- * outflow) -> wrap more of the underlying into the SuperToken to extend
- * the stream's runway.
+ * Schedule -> read net flow -> (condition: negative, i.e. net outflow) ->
+ * wrap more of the underlying to extend the stream's runway.
  *
- * Directly mirrors KeeperHub's own confirmed example ("Net Flow Alert":
- * Schedule (hourly) -> Read Net Flow Rate -> Condition (< 0) -> Discord)
- * from the Superfluid plugin docs — we swap the notify-only last step for
- * an actual top-up, same as the Aave guardian's approach to its own
- * confirmed example.
+ * Mirrors KeeperHub's own confirmed example ("Net Flow Alert": Schedule
+ * (hourly) -> Read Net Flow Rate -> Condition (< 0) -> Discord) from the
+ * Superfluid plugin docs, swapping the notify-only last step for an actual
+ * top-up.
  *
- * Condition node shape: same unconfirmed piece as the other two protocols.
+ * Condition node config confirmed against KeeperHub's own repo source
+ * (see the Pendle workflow for the full note).
  */
 export function buildSuperfluidGuardianWorkflow(config: SuperfluidGuardianConfig): WorkflowDefinition {
   return {
@@ -50,8 +49,19 @@ export function buildSuperfluidGuardianWorkflow(config: SuperfluidGuardianConfig
           },
         },
       },
-      // TODO(unconfirmed): condition node gating `wrap` on check-flow's
-      // net-flow output being negative.
+      {
+        id: 'gate-outflow',
+        type: 'action',
+        data: {
+          label: 'Only if net outflow',
+          type: 'action',
+          config: singleRuleCondition({
+            leftOperand: templateRef('check-flow', 'Read Net Flow Rate of an Address', 'netFlowRate'),
+            operator: '<',
+            rightOperand: '0',
+          }) as unknown as Record<string, unknown>,
+        },
+      },
       {
         id: 'top-up',
         type: 'action',
@@ -69,7 +79,8 @@ export function buildSuperfluidGuardianWorkflow(config: SuperfluidGuardianConfig
     ],
     edges: [
       { id: 'e1', source: 'trigger', target: 'check-flow' },
-      { id: 'e2', source: 'check-flow', target: 'top-up' },
+      { id: 'e2', source: 'check-flow', target: 'gate-outflow' },
+      { id: 'e3', source: 'gate-outflow', target: 'top-up' },
     ],
   }
 }

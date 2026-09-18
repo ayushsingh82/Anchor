@@ -12,9 +12,9 @@ const CONFIG = {
 describe('buildSuperfluidGuardianWorkflow', () => {
   const workflow = buildSuperfluidGuardianWorkflow(CONFIG)
 
-  it('has one trigger and the two expected action nodes', () => {
-    expect(workflow.nodes).toHaveLength(3)
-    expect(workflow.nodes.map((n) => n.id)).toEqual(['trigger', 'check-flow', 'top-up'])
+  it('has one trigger, the condition gate, and the two expected action nodes', () => {
+    expect(workflow.nodes).toHaveLength(4)
+    expect(workflow.nodes.map((n) => n.id)).toEqual(['trigger', 'check-flow', 'gate-outflow', 'top-up'])
   })
 
   it('wires the schedule trigger with the given cron', () => {
@@ -37,10 +37,19 @@ describe('buildSuperfluidGuardianWorkflow', () => {
     })
   })
 
-  it('chains trigger -> check-flow -> top-up with no gaps or cycles', () => {
+  it('gates the top-up on net flow going negative', () => {
+    const gate = workflow.nodes.find((n) => n.id === 'gate-outflow')!
+    const config = gate.data.config as { conditionConfig: { group: { rules: Array<Record<string, unknown>> } } }
+    const rule = config.conditionConfig.group.rules[0]
+    expect(rule).toMatchObject({ operator: '<', rightOperand: '0' })
+    expect(rule.leftOperand).toContain('check-flow')
+  })
+
+  it('chains trigger -> check-flow -> gate -> top-up with no gaps or cycles', () => {
     expect(workflow.edges).toEqual([
       { id: 'e1', source: 'trigger', target: 'check-flow' },
-      { id: 'e2', source: 'check-flow', target: 'top-up' },
+      { id: 'e2', source: 'check-flow', target: 'gate-outflow' },
+      { id: 'e3', source: 'gate-outflow', target: 'top-up' },
     ])
   })
 })

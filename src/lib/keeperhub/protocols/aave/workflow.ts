@@ -1,5 +1,5 @@
-import type { WorkflowDefinition } from '../../types'
-import { AAVE_V3_PLUGIN_ID, AaveAction } from './actions'
+import { singleRuleCondition, templateRef, type WorkflowDefinition } from '../../types'
+import { AAVE_V3_PLUGIN_ID, AaveAction, MAX_UINT256 } from './actions'
 
 export interface AaveGuardianConfig {
   /** Wallet whose Aave V3 position is being protected. */
@@ -12,14 +12,14 @@ export interface AaveGuardianConfig {
 }
 
 /**
- * Draft workflow: Schedule -> read health factor -> (if below floor) repay.
+ * Schedule -> read health factor -> (condition: below floor) -> repay.
  * Mirrors KeeperHub's own confirmed example ("Health Factor Monitor with
  * Alert": Schedule -> Get User Account Data -> Code -> Condition -> Discord)
- * from docs.keeperhub.com/plugins/aave-v3 — we swap the final notify-only
+ * from docs.keeperhub.com/plugins/aave-v3 — swapping the notify-only last
  * step for a real repay, since the goal is prevention, not just an alert.
  *
- * Condition node shape is the same unconfirmed piece flagged in the Pendle
- * workflow — same plan: draft it via KeeperHub's AI canvas, then reconcile.
+ * Condition node config confirmed against KeeperHub's own repo source
+ * (see the Pendle workflow for the full note).
  */
 export function buildAaveGuardianWorkflow(config: AaveGuardianConfig): WorkflowDefinition {
   return {
@@ -47,9 +47,19 @@ export function buildAaveGuardianWorkflow(config: AaveGuardianConfig): WorkflowD
           },
         },
       },
-      // TODO(unconfirmed): condition node gating `repay` on
-      // check-health's `healthFactor` output falling below
-      // config.healthFactorFloor.
+      {
+        id: 'gate-unhealthy',
+        type: 'action',
+        data: {
+          label: 'Only if below floor',
+          type: 'action',
+          config: singleRuleCondition({
+            leftOperand: templateRef('check-health', 'Get User Account Data', 'healthFactor'),
+            operator: '<',
+            rightOperand: config.healthFactorFloor,
+          }) as unknown as Record<string, unknown>,
+        },
+      },
       {
         id: 'repay',
         type: 'action',
@@ -60,12 +70,12 @@ export function buildAaveGuardianWorkflow(config: AaveGuardianConfig): WorkflowD
             pluginId: AAVE_V3_PLUGIN_ID,
             actionId: AaveAction.repay,
             asset: config.repayAsset,
-            // interestRateMode/amount: unconfirmed how to reference "repay
-            // just enough to clear the floor" — likely needs a Math node
-            // computing the shortfall from check-health's output, once the
-            // reference/template syntax is confirmed (see PLAN.md).
+            // MAX_UINT256 means "repay the entire debt" — confirmed against
+            // docs.keeperhub.com/plugins/aave-v3, and the right amount for a
+            // guardian anyway (see actions.ts for why a partial repay isn't
+            // safer here).
             interestRateMode: '2',
-            amount: '0',
+            amount: MAX_UINT256,
             onBehalfOf: config.user,
           },
         },
@@ -73,7 +83,8 @@ export function buildAaveGuardianWorkflow(config: AaveGuardianConfig): WorkflowD
     ],
     edges: [
       { id: 'e1', source: 'trigger', target: 'check-health' },
-      { id: 'e2', source: 'check-health', target: 'repay' },
+      { id: 'e2', source: 'check-health', target: 'gate-unhealthy' },
+      { id: 'e3', source: 'gate-unhealthy', target: 'repay' },
     ],
   }
 }
