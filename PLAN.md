@@ -112,22 +112,38 @@ be safer for a live demo if the plugin's Pendle deployment supports one.
       `GET /api/workflows` returns 200 against `app.keeperhub.com`, so
       `client.ts`'s REST shape is correct against the real API, not just
       docs.
-- [ ] **Wallet is funded with nothing.** `GET /api/user/wallet` confirms
-      the org's Turnkey-managed wallet: `0x41fa117719bc134fc8a7e067227ded1fc0355b45`
-      (created 2026-09-17). `GET /api/user/wallet/balances` shows **zero
-      balance on every chain KeeperHub supports, mainnet and testnet** —
-      no gas, no stablecoins anywhere. (Tempo/Tempo Testnet report a
-      garbage `nativeBalanceRaw` of repeating "42"s — not real funds,
-      disregarded.) This is now the actual hard blocker for the
-      submission's required "link to a transaction executed through
-      KeeperHub": nothing can execute without gas. Two automated
-      no-auth-faucet attempts (Base's own faucet endpoint, QuickNode's
-      API) both failed as expected — real faucets gate behind
-      CAPTCHA/wallet-connect specifically to stop scripted draining.
-      Waiting on manual funding: send Base Sepolia testnet ETH to the
-      address above via https://www.base.org/faucet or
-      https://www.alchemy.com/faucets/base-sepolia, then the plan is to
-      trigger a real workflow and capture the resulting tx hash.
+- [x] ~~Wallet is funded with nothing~~ — resolved. Funded manually with
+      Base Sepolia testnet ETH (0.05 ETH) after two automated no-auth-faucet
+      attempts failed as expected (real faucets gate behind CAPTCHA/wallet-
+      connect specifically to stop scripted draining).
+- [x] ~~No real executed transaction~~ — **resolved, this is the actual
+      submission proof.** Three attempts via
+      `POST /api/workflows/{id}/execute` and `POST /api/execute/transfer`
+      all returned `403 {"error":"Daily spending cap exceeded"}` — even at
+      a 1-wei amount, which made no sense against a cap that
+      `get_spending_limits` (an MCP tool) confirmed was correctly set to
+      0.09 ETH with 0 used. Root cause, found by reading a real working
+      integration's client code: KeeperHub's transfer `amount` is a
+      **decimal ETH string** ("0.000001"), not a raw wei integer — every
+      prior attempt was being read as whole ETH (1 wei's request body sent
+      `amount: "1"`, i.e. 1 ETH), blowing through any real cap instantly.
+      Corrected, called via the MCP `execute_transfer` tool
+      (`https://app.keeperhub.com/mcp`), and got back a real result on the
+      first try:
+      ```
+      executionId: rg6tyhcviaxvy7ae23fkf
+      transactionHash: 0x536335e22217473b55e769c0ad4ea5635422bd69db0f241a8038115c903d0fc1
+      https://sepolia.basescan.org/tx/0x536335e22217473b55e769c0ad4ea5635422bd69db0f241a8038115c903d0fc1
+      ```
+      Verified independently via `eth_getTransactionReceipt` (`status: 0x1`)
+      and by decoding the calldata directly — it's an EIP-7702 smart-account
+      execution (our wallet's authorization delegates to a KeeperHub-
+      operated contract; a relayer sponsors gas), moving exactly `0xe8d4a51000`
+      wei = 0.000001 ETH, with our wallet address embedded as both the
+      transfer's sender and recipient parameters (a self-transfer proof,
+      not a protocol-specific action). Data lives in
+      `src/lib/keeperhub/live-proof.ts`, shown live in `/app` and on the
+      landing page.
 - [ ] **Pendle market + YT addresses** for both the expiring and next
       market — pick these live from app.pendle.finance right before the
       demo, not now (see the gathered-addresses section above).
@@ -177,8 +193,12 @@ have an open PR against them from other hackathon entrants.
   reference instead of the real cause. Root-caused to
   `lib/workflow/editor/sanitize-nodes.ts`'s `normalizeConditionConfig`,
   which dropped a root-level `group` instead of folding it in. Added 2
-  tests to `tests/unit/sanitize-nodes.test.ts`.
-- **[PR #2558](https://github.com/KeeperHub/keeperhub/pull/2558)** — fixes
+  tests to `tests/unit/sanitize-nodes.test.ts`. Review found two real edge
+  cases in the fix itself (a dropped `logicalOperator` in the array-shaped
+  path; a group-less nested `conditionConfig` swallowing a real
+  root-level group) — both fixed in a follow-up commit with 2 more
+  regression tests, still on the same open PR.
+- **[PR #2567](https://github.com/KeeperHub/keeperhub/pull/2567)** — fixes
   **#2230** ("Add Arc testnet as a supported chain"), and ships mainnet
   alongside it since Arc's mainnet went live mid-hackathon
   (2026-09-16). Chain IDs, RPC URLs, and the USDC contract address
@@ -187,7 +207,12 @@ have an open PR against them from other hackathon entrants.
   Circle's docs — a couple of secondary sources reported a conflicting
   chain ID for an unrelated, differently-named "ARC" project, ruled out
   explicitly. Touches `lib/rpc/rpc-config.ts`,
-  `scripts/seed/seed-chains.ts`, `scripts/seed/seed-tokens.ts`.
+  `scripts/seed/seed-chains.ts`, `scripts/seed/seed-tokens.ts`. Supersedes
+  an earlier PR (#2558), which a review bot closed after finding one real
+  blocking issue (mainnet's explorer API 403ing into a JSON-parse crash);
+  fixed in #2567 along with two other review notes (a stale
+  "testnet-first" comment, a missing chain-ID registration in
+  `INDEPENDENT_TOKEN_LIST_CHAIN_IDS`).
 
 Both were chosen over other open, unclaimed candidates (#2433 Lido
 Withdrawal Queue, #2453 Uniswap V3 liquidity actions, #2444 Hoodi network)
@@ -203,9 +228,12 @@ submitted. This is the actual remaining blocker, not code.
 
 ## Demo strategy (per earlier discussion)
 
-Pick **one** protocol to actually execute for real (Superfluid is the
+The generic proof-of-pipeline transaction above (real tx hash, see "Left —
+before this can execute anything real") satisfies the submission's literal
+requirement, but it isn't protocol-specific. Still worth picking **one**
+protocol to actually execute for real if time allows (Superfluid is the
 fastest to stage — wrap + open a stream, no liquidation timing or market
 maturity to coordinate). Show the other two as configured-but-untriggered
 workflows in the KeeperHub dashboard. Video: problem → three protocols +
-why each is a "forgotten maintenance" case → live workflow list → the one
-real triggered execution + tx hash → candid "what's unfinished."
+why each is a "forgotten maintenance" case → live workflow list → the real
+tx hash already in hand → candid "what's unfinished."
