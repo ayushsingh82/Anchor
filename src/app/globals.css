@@ -64,7 +64,7 @@ button {
   display: flex;
   align-items: center;
   gap: 24px;
-  padding: 20px clamp(20px, 4vw, 48px);
+  padding: 28px clamp(20px, 4vw, 48px);
 }
 
 .nav-fx {
@@ -89,7 +89,10 @@ button {
   display: none;
   align-items: center;
   gap: 28px;
-  margin-left: auto;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .nav-links a {
@@ -249,6 +252,104 @@ button:focus-visible {
   padding: 32px 20px 64px;
 }
 
+.hero-dash {
+  margin-top: 56px;
+  width: min(560px, 92vw);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 18px 10px;
+  text-align: left;
+  box-shadow: 0 40px 100px -30px rgba(0, 0, 0, 0.7);
+}
+
+.hero-dash-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.hero-dash-dots {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.hero-dash-dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--line);
+  font-style: normal;
+}
+
+.hero-dash-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+
+.hero-dash-live {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.hero-dash-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.hero-dash-row + .hero-dash-row {
+  border-top: 1px solid var(--line);
+}
+
+.hero-dash-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: #fff;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.hero-dash-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hero-dash-action {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--ink-muted);
+  background: transparent;
+}
+
+.hero-dash-status {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+@media (max-width: 640px) {
+  .hero-dash-action {
+    display: none;
+  }
+}
+
 .eyebrow {
   display: inline-flex;
   align-items: center;
@@ -405,9 +506,9 @@ button:focus-visible {
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  font-size: 15px;
-  font-weight: 700;
-  color: #05050a;
+  background: #fff;
+  padding: 4px;
+  object-fit: contain;
 }
 
 .protocol-name {
@@ -644,22 +745,20 @@ button:focus-visible {
   color: var(--ink-muted);
 }
 
-.footer-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-.footer-links a {
+.footer-github {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
   color: var(--ink-muted);
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-  transition: color 0.18s ease;
+  transition: color 0.18s ease, background 0.18s ease;
 }
 
-.footer-links a:hover {
+.footer-github:hover {
   color: var(--ink);
+  background: var(--panel);
 }
 
 /* ---------- entrance sequence ---------- */
