@@ -102,22 +102,23 @@ export interface ConditionNodeConfig {
   }
 }
 
-let ruleCounter = 0
-/** Deterministic-enough IDs for a single workflow build (not persisted/compared across runs). */
-function nextId(prefix: string): string {
-  ruleCounter += 1
-  return `${prefix}-${ruleCounter}`
-}
-
 /** Build a single-rule Condition node's config. Most of our guardian
- * workflows only ever need one rule gating the branch. */
+ * workflows only ever need one rule gating the branch.
+ *
+ * IDs are fixed literals, not a counter: this used to increment a shared
+ * module-level counter per call, which produced different IDs on the server
+ * (fresh module state per request) vs. the client (module state persists
+ * across client-side navigation) — a real hydration mismatch on any page
+ * that renders a built workflow's JSON (e.g. /workflow, /app's Raw JSON
+ * tab). A single rule/group per call never collides with a sibling within
+ * the same group, so a fixed name is enough. */
 export function singleRuleCondition(rule: Omit<ConditionRule, 'id'>): ConditionNodeConfig {
   return {
     conditionConfig: {
       group: {
-        id: nextId('group'),
+        id: 'gate-group',
         logic: 'AND',
-        rules: [{ id: nextId('rule'), ...rule }],
+        rules: [{ id: 'gate-rule', ...rule }],
       },
     },
   }

@@ -2,17 +2,13 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { CONNECTED_WALLET, LIVE_PROOF } from '@/lib/keeperhub/live-proof'
 import { buildAaveGuardianWorkflow } from '@/lib/keeperhub/protocols/aave/workflow'
 import { buildPendleRolloverWorkflow } from '@/lib/keeperhub/protocols/pendle/workflow'
 import { buildSuperfluidGuardianWorkflow } from '@/lib/keeperhub/protocols/superfluid/workflow'
 
 // Example addresses only, for display — not wired to any real account.
 const EXAMPLE = '0x0000000000000000000000000000000000000000'
-
-// The org's real Turnkey-managed wallet (confirmed live via GET /api/user/wallet).
-// Funded with Base Sepolia testnet ETH; shown here so the dashboard reflects the
-// actual connected account instead of only placeholder addresses.
-const CONNECTED_WALLET = '0x41fa117719bc134fc8a7e067227ded1fc0355b45'
 
 const DASHBOARD = [
   {
@@ -56,37 +52,18 @@ const DASHBOARD = [
   },
 ]
 
-// Real execution data, pulled from GET /api/workflows/{id}/executions against
-// the live KeeperHub org — not fabricated. Both runs completed only the
-// Manual trigger step; the value-moving step never fired because a separate,
-// direct call to POST /api/execute/transfer with the same parameters
-// confirmed the actual blocker: {"error":"Daily spending cap exceeded"}.
-const LIVE_PROOF = {
-  workflowId: '3bu6v8ehgnqld08lj3y6h',
-  workflowName: 'Anchor live proof — Base Sepolia self-transfer',
-  action: {
-    pluginId: 'web3',
-    actionId: 'transfer-native-token',
-    network: '84532 (Base Sepolia)',
-    recipientAddress: CONNECTED_WALLET,
-    amount: '10000000000000 wei (0.00001 ETH)',
-  },
-  executions: [
-    { id: 'vqkzav037lk2kv68v5yru', startedAt: '2026-09-18T05:14:56.745Z', completedSteps: '1 / 2', lastNode: 'Manual (trigger)', outcome: 'blocked before the transfer step' },
-    { id: 'nz7y9mj5fnv86lx4ln5vs', startedAt: '2026-09-18T05:13:23.355Z', completedSteps: '1 / 2', lastNode: 'Manual (trigger)', outcome: 'blocked before the transfer step' },
-  ],
-  blocker: 'Daily spending cap exceeded',
-}
-
 const css = `
   .da-shell { display: flex; min-height: 100vh; background: #ffffff; }
-  .da-sidebar { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 2px solid #000000; background: #ffffff; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  .da-sidebar { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 2px solid #000000; background: #ffffff; position: fixed; top: 0; left: 0; height: 100vh; overflow: hidden; z-index: 10; }
   .da-sidebar-head { height: 58px; background: #ffffff; border-bottom: 2px solid #000000; display: flex; align-items: center; padding: 0 20px; flex-shrink: 0; }
   .da-sidebar-nav { flex: 1; padding: 16px 0; }
-  .da-main { flex: 1; min-width: 0; background: #ffffff; padding: clamp(28px, 4vw, 56px) clamp(20px, 4vw, 48px) 100px; }
+  .da-main { flex: 1; min-width: 0; background: #ffffff; margin-left: 260px; padding: clamp(28px, 4vw, 56px) clamp(20px, 4vw, 48px) 0; }
+  .da-footer { margin-left: 260px; border-top: 2px solid #000000; padding: 24px clamp(20px, 4vw, 48px); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
   @media (max-width: 720px) {
     .da-shell { flex-direction: column; }
     .da-sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 2px solid #000000; }
+    .da-main { margin-left: 0; }
+    .da-footer { margin-left: 0; }
   }
 `
 
@@ -95,6 +72,7 @@ const VIEWS = ['Overview', 'Raw JSON'] as const
 export default function AppDashboard() {
   const [selectedId, setSelectedId] = useState(DASHBOARD[0].id)
   const [view, setView] = useState<(typeof VIEWS)[number]>('Overview')
+  const [openTx, setOpenTx] = useState<(typeof LIVE_PROOF.transactions)[number] | null>(null)
   const selected = DASHBOARD.find((d) => d.id === selectedId) ?? DASHBOARD[0]
 
   // The root layout's <body> is dark by default (see globals.css --bg); this
@@ -208,35 +186,93 @@ export default function AppDashboard() {
           </div>
         </div>
 
-        <div style={{ background: '#fff3e0', border: '2px solid #000000', padding: '12px 16px', marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#a15c00', flexShrink: 0 }} />
-            <p style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#a15c00', margin: 0 }}>
-              Live execution — real, not simulated
+        <div style={{ background: '#e8f9ee', border: '2px solid #000000', padding: '24px 28px', marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#1a7a3f', flexShrink: 0 }} />
+            <p style={{ fontSize: 15, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#1a7a3f', margin: 0, fontFamily: 'var(--font-outfit)' }}>
+              Live execution — {LIVE_PROOF.transactions.length} real transactions confirmed
             </p>
           </div>
-          <p style={{ fontSize: 12, color: '#171717', lineHeight: 1.6, margin: '0 0 4px' }}>
-            This {selected.name} guardian hasn&apos;t triggered yet, but the underlying execute pipeline has: workflow{' '}
-            <code style={{ color: '#a15c00' }}>{LIVE_PROOF.workflowId}</code> ran {LIVE_PROOF.executions.length} real
-            times via <code style={{ color: '#a15c00' }}>POST /api/workflows/{'{id}'}/execute</code> against this same
-            connected wallet.
+          <p style={{ fontSize: 13.5, color: '#171717', lineHeight: 1.7, margin: '0 0 14px' }}>
+            This {selected.name} guardian hasn&apos;t triggered yet, but the underlying execute pipeline has, for
+            real: {LIVE_PROOF.transactions.length} KeeperHub-executed transactions from the connected wallet —{' '}
+            <a
+              href={`https://sepolia.basescan.org/address/${CONNECTED_WALLET}`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: '#1a7a3f', fontFamily: 'monospace' }}
+            >
+              {CONNECTED_WALLET}
+            </a>
+            {' '}— each confirmed on Base Sepolia with a real, checkable transaction hash.
           </p>
-          <p style={{ fontSize: 12, color: '#171717', lineHeight: 1.6, margin: 0 }}>
-            The trigger fired both times; the value-moving step is blocked by a real org guardrail —{' '}
-            <code style={{ color: '#a15c00' }}>&quot;{LIVE_PROOF.blocker}&quot;</code> (confirmed via{' '}
-            <code style={{ color: '#a15c00' }}>POST /api/execute/transfer</code>, HTTP 403) — waiting on that cap
-            being raised in the org&apos;s settings.
-          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+            {LIVE_PROOF.transactions.map((tx) => (
+              <div key={tx.transactionHash} style={{ background: '#ffffff', border: '2px solid #000000', padding: '12px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#888888', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Execution ID</span>
+                  <code style={{ fontSize: 12, fontWeight: 700, color: '#171717' }}>{tx.executionId}</code>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, color: '#666666' }}>Amount</span>
+                  <span style={{ fontSize: 12, color: '#171717', fontWeight: 700 }}>{tx.amountEth} ETH · Base Sepolia</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontSize: 12, color: '#666666' }}>Transaction hash</span>
+                  <a
+                    href={tx.transactionLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ fontSize: 12, color: '#1a7a3f', fontWeight: 700, fontFamily: 'monospace' }}
+                  >
+                    {tx.transactionHash.slice(0, 12)}…{tx.transactionHash.slice(-8)} ↗
+                  </a>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOpenTx(tx)}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    textAlign: 'left',
+                    background: 'transparent',
+                    border: 'none',
+                    borderTop: '1px solid #eee',
+                    paddingTop: 8,
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    color: '#6D00FF',
+                    cursor: 'pointer',
+                  }}
+                >
+                  What does this transaction do? →
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ background: '#ffffff', border: '2px solid #000000', padding: '14px 18px' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#666666', margin: '0 0 8px' }}>
+              Real protocol-specific read — Aave V3, Base mainnet
+            </p>
+            <p style={{ fontSize: 12.5, color: '#171717', lineHeight: 1.6, margin: 0 }}>
+              <code style={{ color: '#1a7a3f' }}>{LIVE_PROOF.aaveRead.actionType}</code> executed live against this
+              wallet: totalCollateralBase <strong>{LIVE_PROOF.aaveRead.result.totalCollateralBase}</strong>, healthFactor{' '}
+              <strong>{LIVE_PROOF.aaveRead.result.healthFactor}</strong> — no Aave position exists yet, so this is a
+              real &quot;nothing to protect&quot; result, not a staged demo. It also independently confirms the{' '}
+              <a href={LIVE_PROOF.aaveRead.poolAddressLink} target="_blank" rel="noreferrer" style={{ color: '#1a7a3f' }}>
+                Aave V3 Pool address on Base
+              </a>{' '}
+              already recorded in PLAN.md.
+            </p>
+          </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 12, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 12, marginBottom: 20, maxWidth: 320 }}>
           {[
             { stat: String(selected.workflow.nodes.length), lbl: 'Nodes' },
             { stat: String(selected.workflow.edges.length), lbl: 'Edges' },
-            {
-              stat: (selected.workflow.nodes[0].data.config as { cron?: string }).cron ?? '—',
-              lbl: 'Trigger',
-            },
           ].map((s) => (
             <div key={s.lbl} style={{ border: '2px solid #000000', padding: '12px 14px' }}>
               <div style={{ fontFamily: 'var(--font-outfit)', fontSize: 20, fontWeight: 900, color: '#171717' }}>{s.stat}</div>
@@ -245,18 +281,18 @@ export default function AppDashboard() {
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           {VIEWS.map((v) => (
             <button
               key={v}
               type="button"
               onClick={() => setView(v)}
               style={{
-                padding: '8px 16px',
+                padding: '6px 14px',
                 background: view === v ? '#6D00FF' : '#ffffff',
                 border: '2px solid #000000',
                 color: view === v ? '#ffffff' : '#171717',
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: 700,
                 fontFamily: 'inherit',
                 cursor: 'pointer',
@@ -269,8 +305,8 @@ export default function AppDashboard() {
 
         {view === 'Overview' ? (
           <>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#6D00FF', margin: '0 0 8px' }}>Workflow steps</p>
-            <ol style={{ listStyle: 'none', padding: 0, margin: '12px 0 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#888888', margin: '0 0 6px' }}>Workflow steps</p>
+            <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
               {selected.workflow.nodes.map((node) => (
                 <li
                   key={node.id}
@@ -278,17 +314,17 @@ export default function AppDashboard() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: 12,
-                    padding: '10px 14px',
+                    gap: 10,
+                    padding: '6px 10px',
                     background: '#fafafa',
-                    border: '2px solid #000000',
-                    fontSize: 13,
-                    color: '#171717',
-                    fontWeight: 600,
+                    border: '1px solid #ddd',
+                    fontSize: 11.5,
+                    color: '#444444',
+                    fontWeight: 500,
                   }}
                 >
                   <span>{node.data.label}</span>
-                  <code style={{ fontFamily: 'monospace', fontSize: 11, color: '#888888' }}>{node.id}</code>
+                  <code style={{ fontFamily: 'monospace', fontSize: 10, color: '#999999' }}>{node.id}</code>
                 </li>
               ))}
             </ol>
@@ -311,6 +347,106 @@ export default function AppDashboard() {
           </pre>
         )}
       </main>
+
+      <footer className="da-footer">
+        <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+          <svg width="18" height="18" viewBox="0 0 56 56" fill="none" aria-hidden="true">
+            <circle cx="28" cy="12" r="5" stroke="#6D00FF" strokeWidth="4" />
+            <path d="M28 17V44M14 32c0 8 6.3 12 14 12s14-4 14-12M14 32h6M42 32h-6" stroke="#6D00FF" strokeWidth="4" strokeLinecap="round" />
+          </svg>
+          <span style={{ fontFamily: 'var(--font-outfit)', fontWeight: 900, fontSize: 15, color: '#171717' }}>Anchor</span>
+        </Link>
+        <p style={{ fontSize: 12, color: '#888888', margin: 0 }}>
+          Positions on Pendle, Aave, and Superfluid don&apos;t sleep. Powered by KeeperHub, neither does their upkeep.
+        </p>
+        <a href="https://github.com/ayushsingh82/Anchor" target="_blank" rel="noreferrer" style={{ color: '#666666' }} aria-label="Anchor on GitHub">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
+          </svg>
+        </a>
+      </footer>
+
+      {openTx && (
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="Close"
+          onClick={() => setOpenTx(null)}
+          onKeyDown={(e) => e.key === 'Escape' && setOpenTx(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#ffffff',
+              border: '2px solid #000000',
+              padding: 28,
+              maxWidth: 460,
+              width: '100%',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+              <h3 style={{ fontFamily: 'var(--font-outfit)', fontSize: 18, fontWeight: 800, color: '#171717', margin: 0 }}>
+                What this transaction is
+              </h3>
+              <button
+                type="button"
+                onClick={() => setOpenTx(null)}
+                aria-label="Close"
+                style={{ background: 'transparent', border: 'none', fontSize: 20, color: '#888888', cursor: 'pointer', lineHeight: 1, padding: 0 }}
+              >
+                ×
+              </button>
+            </div>
+            <p style={{ fontSize: 13.5, color: '#171717', lineHeight: 1.7, marginBottom: 16 }}>
+              A real KeeperHub-executed self-transfer — {openTx.amountEth} ETH sent from the connected wallet to
+              itself on Base Sepolia, via the MCP <code style={{ color: '#6D00FF' }}>execute_transfer</code> tool.
+              This isn&apos;t a protocol action (no Aave/Pendle/Superfluid logic runs here) — it exists to prove the
+              execution pipeline itself: KeeperHub really does sign and broadcast a transaction from this wallet when
+              asked, with a real, independently checkable result.
+            </p>
+            <div style={{ background: '#fafafa', border: '2px solid #000000', padding: '14px 16px', marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 11, color: '#888888', textTransform: 'uppercase', fontWeight: 700 }}>Execution ID</span>
+                <code style={{ fontSize: 12, color: '#171717', fontWeight: 700 }}>{openTx.executionId}</code>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                <span style={{ fontSize: 11, color: '#888888', textTransform: 'uppercase', fontWeight: 700 }}>Verified via</span>
+                <span style={{ fontSize: 12, color: '#171717', fontWeight: 700 }}>eth_getTransactionReceipt</span>
+              </div>
+            </div>
+            <a
+              href={openTx.transactionLink}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                height: 40,
+                padding: '0 20px',
+                background: '#6D00FF',
+                color: '#ffffff',
+                fontSize: 13,
+                fontWeight: 700,
+                textDecoration: 'none',
+              }}
+            >
+              View on Basescan ↗
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
