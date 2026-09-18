@@ -37,3 +37,10 @@ export interface MintPtYtFromSyConfig {
   netSyIn: string
   minPyOut: string
 }
+
+/** Config fields confirmed for `get-pt-balance` / `get-sy-balance`
+ * (docs.keeperhub.com/plugins/pendle) — both take the same shape and
+ * output a single `balance` field (uint256). */
+export interface GetBalanceConfig {
+  account: string
+}

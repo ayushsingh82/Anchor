@@ -38,8 +38,23 @@ routine upkeep nobody remembers to do, so KeeperHub does it on a schedule.
 - [x] Git history for this repo was squashed to a clean 10-commit
       progression earlier in the build (no leftover unrelated history)
 - [x] Unit tests for all three workflow builders (`*/workflow.test.ts`,
-      Vitest) — 13 tests, verifying node wiring, correct plugin/action IDs,
-      and that config values propagate correctly. `npm test`.
+      Vitest) — 16 tests, verifying node wiring, correct plugin/action IDs,
+      config propagation, and (now) the condition-gate rule shape. `npm test`.
+- [x] **Condition/branch node — confirmed, no longer a guess.** Docs 404'd
+      twice; resolved by cloning KeeperHub's own open-source repo and
+      reading `lib/workflow/nodes/condition/{builder-types,resolver,expression}.ts`
+      directly. Real shape:
+      ```
+      config: { conditionConfig: { group: { id, logic: "AND"|"OR",
+        rules: [{ id, leftOperand, operator, rightOperand }] } } }
+      ```
+      and the template-reference syntax is `{{@nodeId:Label.field}}` (label
+      must match the referenced node's `data.label`). Added to
+      `src/lib/keeperhub/types.ts` (`ConditionRule`, `ConditionGroup`,
+      `templateRef()`, `singleRuleCondition()`) and wired into all three
+      workflows as a real `gate-*` node between the check and the action.
+      This closes the single biggest open blocker from every previous
+      version of this file.
 
 ## Explicitly declined
 
@@ -91,38 +106,84 @@ be safer for a live demo if the plugin's Pendle deployment supports one.
 
 ## Left — before this can execute anything real
 
-- [ ] **Condition/branch node JSON shape** — still unconfirmed across all
-      three workflows (404'd when checked directly against the docs both
-      times). Plan unchanged: draft it once via KeeperHub's AI canvas
-      (`ai_generate_workflow` MCP tool) from a plain-English description,
-      then reconcile the exported JSON into these files instead of guessing.
 - [ ] **No live KeeperHub account/API key wired in.** Everything in
-      `src/lib/keeperhub/` is written against the documented API shape but
-      has never been run against a real organization. This is the actual
-      blocker for the submission's required "link to a transaction executed
+      `src/lib/keeperhub/` is written against the documented (and now,
+      for the condition node, source-verified) API shape but has never
+      been run against a real organization. This is the actual blocker
+      for the submission's required "link to a transaction executed
       through KeeperHub."
 - [ ] **Pendle market + YT addresses** for both the expiring and next
       market — pick these live from app.pendle.finance right before the
-      demo, not now (see above).
-- [ ] **Superfluid GDAv1Forwarder address + a concrete SuperToken address**
-      for whichever chain the demo targets.
-- [ ] **Amount/threshold math** in each `workflow.ts` (marked inline) —
-      currently placeholder `'0'` values; needs the reference/template
-      syntax (also unconfirmed, see above) to compute "repay just enough"
-      / "wrap enough to cover N hours" from a prior node's output.
+      demo, not now (see the gathered-addresses section above).
+- [ ] **A concrete SuperToken address** (e.g. USDCx) for whichever chain
+      the demo targets — the forwarder addresses are confirmed, this one
+      is left to pick at demo time since it's inherently per-deployment.
+- [x] ~~Real amount values in each `workflow.ts`~~ — resolved, not with a
+      "Math node" (there isn't one — checked the real repo source,
+      `lib/workflow/nodes/`, and no such node exists; the closest thing is
+      the `code/run-code` plugin, a sandboxed JS step whose `config.code`
+      string supports the same `{{@nodeId:Label.field}}` references,
+      confirmed via `lib/workflow/executor/executor.workflow.ts`'s
+      `processCodeTemplates`). Turned out neither workflow actually needed
+      it:
+      - **Aave repay** now uses `MAX_UINT256` (confirmed against
+        docs.keeperhub.com/plugins/aave-v3: "Use type(uint256).max as
+        amount to repay the entire debt") instead of a computed partial
+        amount — also the safer choice for a guardian, since a partial
+        repay could undershoot before the next scheduled run.
+      - **Pendle redeem/mint** now reads the real PT/SY balances first
+        (`get-pt-balance` / `get-sy-balance`, both confirmed against
+        docs.keeperhub.com/plugins/pendle: input `account`, output
+        `balance`) and feeds them into `netPyIn`/`netSyIn` via
+        `templateRef()`, instead of guessing an amount. `minSyOut`/
+        `minPyOut` stay `'0'` deliberately — documented inline in
+        `workflow.ts` why that's a choice, not a placeholder.
 
 ## Left — polish
 
-- [ ] `/workflow` and `/proof` routes are linked from the nav/footer but
-      don't exist yet (`src/app/workflow`, `src/app/proof`) — currently
-      404. `/proof` should call `getWorkflowHistory()` once a real workflow
-      exists; needs a graceful "not connected yet" state until then.
-- [ ] `src/components/AeroShards.tsx` (a vendored WebGPU background effect,
-      `vgpu` dependency) is installed but no longer used on the page — it
-      was pulled from the header after visual issues neither of us could
-      verify without a real browser. Either wire it in somewhere it can
-      actually be checked, or remove it and the `vgpu` dependency to avoid
-      shipping dead weight.
+- [ ] Nothing currently — `/workflow`, `/proof`, and the AeroShards
+      cleanup were finished in a later pass than the note that used to be
+      here.
+
+## Bounty track — Best KeeperHub Feature ($1,000, two $500 winners)
+
+Reviewed the repo's open issues/PRs directly (`gh issue list` /
+`gh pr list`) rather than guessing what's free — most obvious bugs already
+have an open PR against them from other hackathon entrants.
+
+**Shipped — two PRs, both open against `KeeperHub/keeperhub`:**
+
+- **[PR #2557](https://github.com/KeeperHub/keeperhub/pull/2557)** — fixes
+  **#2305**: a condition config passed as `{ group }` (matching the
+  `ConditionConfig` type's own shape, ironically) was silently ignored,
+  because the resolver only reads `config.conditionConfig.group`; the
+  resulting undefined-condition failure got blamed on the template
+  reference instead of the real cause. Root-caused to
+  `lib/workflow/editor/sanitize-nodes.ts`'s `normalizeConditionConfig`,
+  which dropped a root-level `group` instead of folding it in. Added 2
+  tests to `tests/unit/sanitize-nodes.test.ts`.
+- **[PR #2558](https://github.com/KeeperHub/keeperhub/pull/2558)** — fixes
+  **#2230** ("Add Arc testnet as a supported chain"), and ships mainnet
+  alongside it since Arc's mainnet went live mid-hackathon
+  (2026-09-16). Chain IDs, RPC URLs, and the USDC contract address
+  (`0x3600...0000`, native gas token's optional ERC-20 interface) were all
+  verified directly on-chain via raw JSON-RPC calls, not just against
+  Circle's docs — a couple of secondary sources reported a conflicting
+  chain ID for an unrelated, differently-named "ARC" project, ruled out
+  explicitly. Touches `lib/rpc/rpc-config.ts`,
+  `scripts/seed/seed-chains.ts`, `scripts/seed/seed-tokens.ts`.
+
+Both were chosen over other open, unclaimed candidates (#2433 Lido
+Withdrawal Queue, #2453 Uniswap V3 liquidity actions, #2444 Hoodi network)
+deliberately: #2305 required reading the real Condition node source, which
+is exactly what unblocked the main-track workflows above — one
+investigation, two payoffs. #2230 was flagged as a trending/safe pick and
+had a clear, bounded spec (3 files, no plugin/schema changes).
+
+**Left for the bounty track:** neither PR has a DoraHacks BUIDL yet. The
+bounty rule requires a separate BUIDL per track (a single BUIDL can only
+enter one track) — the PRs existing on GitHub isn't the same as being
+submitted. This is the actual remaining blocker, not code.
 
 ## Demo strategy (per earlier discussion)
 
