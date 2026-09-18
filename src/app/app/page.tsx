@@ -53,17 +53,17 @@ const DASHBOARD = [
 ]
 
 const css = `
-  .da-shell { display: flex; min-height: 100vh; background: #ffffff; }
-  .da-sidebar { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 2px solid #000000; background: #ffffff; position: fixed; top: 0; left: 0; height: 100vh; overflow: hidden; z-index: 10; }
+  .da-shell { display: flex; height: 100vh; background: #ffffff; overflow: hidden; }
+  .da-sidebar { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 2px solid #000000; background: #ffffff; height: 100vh; overflow: hidden; }
   .da-sidebar-head { height: 58px; background: #ffffff; border-bottom: 2px solid #000000; display: flex; align-items: center; padding: 0 20px; flex-shrink: 0; }
   .da-sidebar-nav { flex: 1; padding: 16px 0; }
-  .da-main { flex: 1; min-width: 0; background: #ffffff; margin-left: 260px; padding: clamp(28px, 4vw, 56px) clamp(20px, 4vw, 48px) 0; }
-  .da-footer { margin-left: 260px; border-top: 2px solid #000000; padding: 24px clamp(20px, 4vw, 48px); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .da-content { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+  .da-main { flex: 1; background: #ffffff; padding: clamp(28px, 4vw, 56px) clamp(20px, 4vw, 48px) 0; }
+  .da-footer { border-top: 2px solid #000000; padding: 24px clamp(20px, 4vw, 48px); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
   @media (max-width: 720px) {
-    .da-shell { flex-direction: column; }
-    .da-sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 2px solid #000000; }
-    .da-main { margin-left: 0; }
-    .da-footer { margin-left: 0; }
+    .da-shell { flex-direction: column; height: auto; overflow: visible; }
+    .da-sidebar { width: 100%; height: auto; border-right: none; border-bottom: 2px solid #000000; }
+    .da-content { height: auto; overflow: visible; }
   }
 `
 
@@ -177,6 +177,7 @@ export default function AppDashboard() {
         </div>
       </aside>
 
+      <div className="da-content">
       <main className="da-main">
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 20 }}>
           <img src={selected.icon} alt="" width={32} height={32} style={{ borderRadius: 6, background: '#fff', padding: 3, border: '2px solid #000', flexShrink: 0 }} />
@@ -193,21 +194,7 @@ export default function AppDashboard() {
               Live execution — {LIVE_PROOF.transactions.length} real transactions confirmed
             </p>
           </div>
-          <p style={{ fontSize: 13.5, color: '#171717', lineHeight: 1.7, margin: '0 0 14px' }}>
-            This {selected.name} guardian hasn&apos;t triggered yet, but the underlying execute pipeline has, for
-            real: {LIVE_PROOF.transactions.length} KeeperHub-executed transactions from the connected wallet —{' '}
-            <a
-              href={`https://sepolia.basescan.org/address/${CONNECTED_WALLET}`}
-              target="_blank"
-              rel="noreferrer"
-              style={{ color: '#1a7a3f', fontFamily: 'monospace' }}
-            >
-              {CONNECTED_WALLET}
-            </a>
-            {' '}— each confirmed on Base Sepolia with a real, checkable transaction hash.
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14, marginTop: 14 }}>
             {LIVE_PROOF.transactions.map((tx) => (
               <div key={tx.transactionHash} style={{ background: '#ffffff', border: '2px solid #000000', padding: '12px 16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
@@ -252,20 +239,44 @@ export default function AppDashboard() {
             ))}
           </div>
 
+          <div style={{ background: '#fff3e0', border: '2px solid #000000', padding: '14px 18px', marginBottom: 14 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#a15c00', margin: '0 0 8px' }}>
+              Deliberate refusal — the guardrail works both ways
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 12, color: '#666666' }}>Attempted amount</span>
+              <span style={{ fontSize: 12, color: '#171717', fontWeight: 700 }}>{LIVE_PROOF.refusal.attemptedAmountEth} ETH (&gt;10× the 0.09 ETH cap)</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              <span style={{ fontSize: 12, color: '#666666' }}>Result</span>
+              <span style={{ fontSize: 12, color: '#a15c00', fontWeight: 700 }}>refused — &quot;{LIVE_PROOF.refusal.error}&quot;</span>
+            </div>
+          </div>
+
           <div style={{ background: '#ffffff', border: '2px solid #000000', padding: '14px 18px' }}>
             <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#666666', margin: '0 0 8px' }}>
               Real protocol-specific read — Aave V3, Base mainnet
             </p>
-            <p style={{ fontSize: 12.5, color: '#171717', lineHeight: 1.6, margin: 0 }}>
-              <code style={{ color: '#1a7a3f' }}>{LIVE_PROOF.aaveRead.actionType}</code> executed live against this
-              wallet: totalCollateralBase <strong>{LIVE_PROOF.aaveRead.result.totalCollateralBase}</strong>, healthFactor{' '}
-              <strong>{LIVE_PROOF.aaveRead.result.healthFactor}</strong> — no Aave position exists yet, so this is a
-              real &quot;nothing to protect&quot; result, not a staged demo. It also independently confirms the{' '}
-              <a href={LIVE_PROOF.aaveRead.poolAddressLink} target="_blank" rel="noreferrer" style={{ color: '#1a7a3f' }}>
-                Aave V3 Pool address on Base
-              </a>{' '}
-              already recorded in PLAN.md.
-            </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 12, color: '#666666' }}>Action</span>
+              <code style={{ fontSize: 12, color: '#1a7a3f', fontWeight: 700 }}>{LIVE_PROOF.aaveRead.actionType}</code>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 12, color: '#666666' }}>Total collateral</span>
+              <span style={{ fontSize: 12, color: '#171717', fontWeight: 700 }}>{LIVE_PROOF.aaveRead.result.totalCollateralBase}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 12, color: '#666666' }}>Health factor</span>
+              <span style={{ fontSize: 12, color: '#171717', fontWeight: 700 }}>{LIVE_PROOF.aaveRead.result.healthFactor}</span>
+            </div>
+            <a
+              href={LIVE_PROOF.aaveRead.poolAddressLink}
+              target="_blank"
+              rel="noreferrer"
+              style={{ fontSize: 11.5, color: '#1a7a3f', fontWeight: 700 }}
+            >
+              View Aave V3 Pool on Base ↗
+            </a>
           </div>
         </div>
 
@@ -365,6 +376,7 @@ export default function AppDashboard() {
           </svg>
         </a>
       </footer>
+      </div>
 
       {openTx && (
         <div

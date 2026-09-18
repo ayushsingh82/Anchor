@@ -74,4 +74,14 @@ export const LIVE_PROOF = {
     },
     poolAddressLink: 'https://basescan.org/address/0xA238Dd80C259a72e81d7e4664a9801593F98d1c5',
   },
+
+  // A deliberate, clean test of the guardrail itself: attempted 1 ETH (>10x
+  // the 0.09 ETH daily cap) on purpose, via the same execute_transfer tool
+  // that produced the three real transactions above. Confirms the cap
+  // actually blocks an oversized real transfer, not just the small ones
+  // it lets through -- the safety rail works both directions.
+  refusal: {
+    attemptedAmountEth: '1',
+    error: 'Daily spending cap exceeded',
+  },
 }

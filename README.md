@@ -14,7 +14,6 @@
   <img alt="Network: Base Sepolia" src="https://img.shields.io/badge/network-Base%20Sepolia-6D00FF.svg">
   <img alt="Transaction: confirmed" src="https://img.shields.io/badge/transaction-confirmed-success.svg">
   <img alt="Tests: 19 passing" src="https://img.shields.io/badge/tests-19%20passing-brightgreen.svg">
-  <img alt="Bounty PRs: 2 open" src="https://img.shields.io/badge/bounty%20PRs-2%20open-orange.svg">
 </p>
 
 > **Verifiable claims** — every one of these is checkable directly against KeeperHub's
@@ -38,13 +37,7 @@
 >    match `lib/workflow/nodes/condition/builder-types.ts` in
 >    [KeeperHub/keeperhub](https://github.com/KeeperHub/keeperhub) line for line —
 >    check the two side by side.
-> 5. **Two mergeable PRs are open against KeeperHub's own repo**, not just filed —
->    [#2557](https://github.com/KeeperHub/keeperhub/pull/2557) (fixes a real
->    condition-config data-loss bug) and
->    [#2567](https://github.com/KeeperHub/keeperhub/pull/2567) (adds Arc mainnet +
->    testnet, chain IDs and the USDC address verified on-chain). Both have real CI
->    runs and real review threads attached.
-> 6. **19/19 unit tests pass**, covering all three protocol workflow builders —
+> 5. **19/19 unit tests pass**, covering all three protocol workflow builders —
 >    run `npm test` yourself.
 
 | | |
@@ -52,7 +45,6 @@
 | **Protocols covered** | 3 — Pendle, Aave V3, Superfluid |
 | **Real KeeperHub executions** | 7 (3 transactions + 3 workflow attempts + 1 Aave read) |
 | **Confirmed on-chain transactions** | [3](https://sepolia.basescan.org/tx/0x536335e22217473b55e769c0ad4ea5635422bd69db0f241a8038115c903d0fc1) — Base Sepolia, all `status: 0x1` |
-| **Bounty PRs shipped** | 2 open — [#2557](https://github.com/KeeperHub/keeperhub/pull/2557), [#2567](https://github.com/KeeperHub/keeperhub/pull/2567) |
 | **Unit tests** | 19 passing |
 | **Contract addresses guessed** | 0 — all pulled from open-source registries or verified on-chain (see [PLAN.md](./PLAN.md)) |
 
@@ -64,7 +56,6 @@
 - [What Anchor does](#what-anchor-does)
 - [Live evidence](#live-evidence)
 - [KeeperHub surfaces used, and how](#keeperhub-surfaces-used-and-how)
-- [Bounty track](#bounty-track)
 - [Getting started](#getting-started)
 - [What still breaks](#what-still-breaks)
 - [Docs](#docs)
@@ -149,6 +140,14 @@ the wallet address `0x41fa117719bc134fc8a7e067227ded1fc0355b45` embedded as
 both the transfer's sender and recipient parameters. These are self-transfer
 proofs of the execution pipeline, not protocol-specific actions.
 
+**The guardrail was also tested on purpose, not just discovered by accident.**
+A deliberate `execute_transfer` call for 1 ETH — more than 10× the account's
+0.09 ETH daily cap — was rejected with the same `403 "Daily spending cap
+exceeded"` seen earlier, confirming the cap genuinely blocks an oversized real
+transfer and isn't just a check that happens to never fire. The safety rail
+works in both directions: it let three correctly-formatted small transfers
+through, and blocked a real oversized one.
+
 **Separately, a real protocol-specific read was executed against Aave V3 on
 Base mainnet** — `aave-v3/get-user-account-data` (the actual actionType,
 found via KeeperHub's own `search_protocol_actions` tool; different casing
@@ -216,25 +215,6 @@ Full done/left tracking, including which contract addresses are real
 (pulled from open-source registries) vs. still placeholder, lives in
 [`PLAN.md`](./PLAN.md) — kept current as the build progresses rather than
 duplicated here.
-
-## Bounty track
-
-Separately from the main integration above, this project also shipped two
-real, mergeable PRs to KeeperHub's own open-source repo:
-
-- **[#2557](https://github.com/KeeperHub/keeperhub/pull/2557)** — fixes a
-  real data-loss bug in the Condition node's config sanitizer: a condition
-  config shaped exactly like `ConditionConfig`'s own type (`{ group }` at the
-  config root) was silently dropped because the resolver only reads
-  `config.conditionConfig.group`. Two rounds of review feedback addressed,
-  including two edge cases in the fix itself (a dropped `logicalOperator`,
-  and a group-less nested config swallowing a real root-level group).
-- **[#2567](https://github.com/KeeperHub/keeperhub/pull/2567)** — adds Arc
-  (Circle's USDC-native L1) as a supported chain, mainnet and testnet. Chain
-  IDs and the USDC contract address verified directly on-chain via raw
-  JSON-RPC calls, not just docs. Supersedes an earlier PR (#2558) that a
-  review bot closed after finding one real blocking issue (a mainnet
-  explorer URL that 403s); that issue is fixed here.
 
 ## Getting started
 
