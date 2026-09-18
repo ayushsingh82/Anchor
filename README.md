@@ -32,17 +32,44 @@ Value moves through KeeperHub's Turnkey-secured, non-custodial wallet
 infrastructure; Anchor's own code only ever reads state and configures/triggers
 workflows.
 
-## KeeperHub surfaces used
+## KeeperHub surfaces used, and how
 
 - **Plugins** — Pendle, Aave V3, Superfluid. Exact action IDs and config
-  shapes confirmed against each plugin's real docs, not guessed. See
+  shapes confirmed against each plugin's real docs
+  (`docs.keeperhub.com/plugins/*`), not guessed. See
   `src/lib/keeperhub/protocols/*/actions.ts`.
-- **REST API** — `POST /api/workflows/create`, `GET /api/workflows`,
-  `GET /api/workflows/{id}/history`. `Authorization: Bearer kh_...`. See
-  `src/lib/keeperhub/client.ts`.
-- **MCP server** — `https://app.keeperhub.com/mcp`, used to draft and validate
-  workflows via `ai_generate_workflow` / `validate_workflow` before ever
-  calling `create_workflow` for real (see Status below for why).
+- **Condition node** — the docs page for this 404'd twice. Resolved by
+  cloning KeeperHub's own open-source repo and reading
+  `lib/workflow/nodes/condition/{builder-types,resolver}.ts` directly — the
+  real `conditionConfig.group` shape and the `{{@nodeId:Label.field}}`
+  template-reference syntax came from source, not docs.
+- **REST API** — used against a real, live KeeperHub org, not just read from
+  docs. Confirmed endpoints:
+  - `POST /api/workflows/create` — create a workflow
+  - `GET /api/workflows` / `GET /api/workflows/{id}` — list/read
+  - `POST /api/workflows/{id}/execute` — manually trigger a run. The docs'
+    AI-generated summary suggested `/run`; that path 404s. `/execute` is the
+    real one.
+  - `GET /api/workflows/{id}/executions` — real run history (status,
+    completed steps, last successful node) — different from
+    `GET /api/workflows/{id}/history`, which is edit/version history, not
+    execution history.
+  - `POST /api/execute/transfer` — KeeperHub's direct-execution API, for a
+    single blockchain transfer without building a full workflow first.
+  - `GET /api/user/wallet` / `GET /api/user/wallet/balances` — the org's
+    Turnkey-managed wallet address and live per-chain balances.
+  - `PATCH /api/workflows/{id}` — e.g. `{"enabled": true}` to allow a
+    created-but-disabled workflow to actually execute its action steps.
+  All authenticated with `Authorization: Bearer kh_...`. See
+  `src/lib/keeperhub/client.ts` for the wrapped subset used by this repo's
+  workflow builders.
+- **MCP server** — `https://app.keeperhub.com/mcp`, for drafting/validating
+  workflows with AI assistance before calling the REST API directly.
+- **Org guardrails, discovered live, not documented** — a new org has a
+  daily spending cap that blocks any value-moving execution by default
+  (confirmed via a real `403 {"error":"Daily spending cap exceeded"}` from
+  `/api/execute/transfer`). Raising it is an org **Settings** action, not
+  an API call this key's scope can make.
 
 Full done/left tracking, including which contract addresses are real
 (pulled from open-source registries) vs. still placeholder, lives in

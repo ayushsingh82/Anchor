@@ -11,8 +11,8 @@ const css = `
   .an-step:last-child { border-right: none; }
   .an-section { padding: 88px 40px; }
   .an-section-inner { max-width: 1120px; margin: 0 auto; }
-  .an-nav { position: fixed; inset: 0 0 auto; height: 58px; z-index: 100; background: #6D00FF; display: flex; align-items: center; padding: 0 32px; }
-  .an-hero { margin-top: 58px; background: #6D00FF; padding: 96px 40px 88px; position: relative; overflow: hidden; }
+  .an-nav { position: fixed; inset: 0 0 auto; height: 58px; z-index: 100; background: #ffffff; display: flex; align-items: center; padding: 0 32px; }
+  .an-hero { margin-top: 58px; background: #ffffff; padding: 96px 40px 88px; position: relative; overflow: hidden; }
   .an-hero-badge { display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 14px; background: #fff; color: #6D00FF; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 36px; flex-wrap: wrap; }
   .an-hero-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
   .an-hero-btn { height: 52px; padding: 0 36px; font-size: 15px; font-weight: 800; cursor: pointer; }
@@ -110,6 +110,36 @@ function AnchorGlyph({ color = '#ffffff', size = 22 }: { color?: string; size?: 
   )
 }
 
+function SignalIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M2 12v-3M6 12V6M10 12V3M14 12V8" stroke="#6D00FF" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function GearIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="8" cy="8" r="2.6" stroke="#6D00FF" strokeWidth="1.6" />
+      <path
+        d="M8 1.5v1.6M8 12.9v1.6M14.5 8h-1.6M3.1 8H1.5M12.4 3.6l-1.1 1.1M4.7 11.3l-1.1 1.1M12.4 12.4l-1.1-1.1M4.7 4.7 3.6 3.6"
+        stroke="#6D00FF"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+function CheckIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M3 8.5 6.2 12 13 4" stroke="#6D00FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 function GitHubIcon({ color = '#333333' }: { color?: string }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill={color} aria-hidden="true">
@@ -121,34 +151,50 @@ function GitHubIcon({ color = '#333333' }: { color?: string }) {
 // ── The Condition Gate showcase section ──────────────────────────────────────
 function GateSection() {
   return (
-    <section className="an-section" style={{ background: '#171717' }}>
+    <section className="an-section" style={{ background: '#ffffff' }}>
       <div className="an-section-inner">
         <div className="an-gate-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
-          <div className="an-gate-row" style={{ display: 'flex', gap: 24, alignItems: 'flex-end', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div
+            className="an-gate-row"
+            style={{
+              display: 'flex',
+              gap: 24,
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              background: '#f8f4ff',
+              border: '2px solid #000000',
+              padding: '32px 24px',
+            }}
+          >
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#aaa', marginBottom: 10 }}>Schedule</div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#666', marginBottom: 10 }}>Schedule</div>
               <div
                 style={{
                   width: 130,
+                  height: 150,
                   maxWidth: '100%',
                   background: '#1e1e1e',
                   border: '2px solid #333',
                   padding: '18px 14px',
                   boxSizing: 'border-box',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
                 }}
               >
                 <div style={{ fontSize: 22, marginBottom: 8 }}>⏱</div>
-                <div style={{ fontSize: 10, color: '#888', fontFamily: 'monospace' }}>*/5 * * * *</div>
-                <div style={{ fontSize: 9, color: '#555', marginTop: 4 }}>fires on cron</div>
+                <div style={{ fontSize: 10, color: '#ccc', fontFamily: 'monospace' }}>*/5 * * * *</div>
+                <div style={{ fontSize: 9, color: '#888', marginTop: 4 }}>fires on cron</div>
               </div>
             </div>
 
-            <div className="an-gate-arrow" style={{ paddingBottom: 40, color: '#444', fontSize: 28, fontWeight: 200 }}>
+            <div className="an-gate-arrow" style={{ color: '#6D00FF', fontSize: 28, fontWeight: 200 }}>
               →
             </div>
 
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#aaa', marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#666', marginBottom: 10 }}>
                 Condition Gate
               </div>
               <div
@@ -191,33 +237,35 @@ function GateSection() {
                     />
                   ))}
                   <div className="an-scan-beam" />
-                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: 10, color: '#6D00FF', fontFamily: 'monospace', fontWeight: 700 }}>
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: 10, color: '#ffffff', fontFamily: 'monospace', fontWeight: 700, textAlign: 'center' }}>
                     healthFactor
                     <br />
                     {'< 1.5e18'}
                   </div>
                 </div>
                 <div style={{ marginTop: 6, padding: '4px 6px', background: '#111', borderRadius: 4 }}>
-                  <div style={{ fontSize: 8, color: '#6D00FF', fontWeight: 700, textAlign: 'center' }}>EVALUATING…</div>
+                  <div style={{ fontSize: 8, color: '#ffffff', fontWeight: 700, textAlign: 'center' }}>EVALUATING…</div>
                 </div>
               </div>
             </div>
 
-            <div style={{ paddingBottom: 40, color: '#444', fontSize: 28, fontWeight: 200 }}>→</div>
+            <div style={{ color: '#6D00FF', fontSize: 28, fontWeight: 200 }}>→</div>
 
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#aaa', marginBottom: 10 }}>On-Chain</div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#666', marginBottom: 10 }}>On-Chain</div>
               <div
                 style={{
-                  width: 120,
+                  width: 130,
+                  height: 150,
                   maxWidth: '100%',
                   boxSizing: 'border-box',
                   background: '#0a2e1a',
                   border: '2px solid #1a5c35',
                   padding: '18px 12px',
-                  display: 'inline-flex',
+                  display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: 10,
                 }}
               >
@@ -249,7 +297,7 @@ function GateSection() {
                 fontFamily: 'var(--font-outfit)',
                 fontSize: 'clamp(28px, 3.5vw, 46px)',
                 fontWeight: 900,
-                color: '#ffffff',
+                color: '#171717',
                 letterSpacing: '-0.02em',
                 lineHeight: 1.05,
                 marginBottom: 20,
@@ -259,7 +307,7 @@ function GateSection() {
               <br />
               <span style={{ color: '#6D00FF' }}>Anchor acts.</span>
             </h2>
-            <p style={{ fontSize: 15, lineHeight: 1.8, color: '#888', marginBottom: 32 }}>
+            <p style={{ fontSize: 15, lineHeight: 1.8, color: '#555555', marginBottom: 32 }}>
               KeeperHub&rsquo;s docs 404&rsquo;d on the Condition node&rsquo;s exact shape, twice. Instead of guessing under
               deadline, we cloned KeeperHub&rsquo;s own source and read{' '}
               <code style={{ fontFamily: 'monospace', color: '#4ade80', fontSize: 13 }}>lib/workflow/nodes/condition/</code>{' '}
@@ -270,36 +318,35 @@ function GateSection() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 36 }}>
               {[
-                { icon: '⬛', label: 'Reads a real signal', sub: 'Health factor, PT expiry, net flow rate — pulled live, not guessed' },
-                { icon: '⚙', label: 'Gate evaluates instantly', sub: 'Confirmed against KeeperHub’s own source, not the docs that 404’d' },
-                { icon: '✓', label: 'Executes through KeeperHub', sub: 'Turnkey-signed, non-custodial, auditable in the dashboard' },
-              ].map(({ icon, label, sub }) => (
+                { Icon: SignalIcon, label: 'Reads a real signal', sub: 'Health factor, PT expiry, net flow rate — pulled live, not guessed' },
+                { Icon: GearIcon, label: 'Gate evaluates instantly', sub: 'Confirmed against KeeperHub’s own source, not the docs that 404’d' },
+                { Icon: CheckIcon, label: 'Executes through KeeperHub', sub: 'Turnkey-signed, non-custodial, auditable in the dashboard' },
+              ].map(({ Icon, label, sub }) => (
                 <div key={label} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                   <div
                     style={{
                       width: 36,
                       height: 36,
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.1)',
+                      background: '#f8f4ff',
+                      border: '1px solid #000000',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
-                      fontSize: 16,
                     }}
                   >
-                    {icon}
+                    <Icon />
                   </div>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#e0e0e0' }}>{label}</div>
-                    <div style={{ fontSize: 12, color: '#666', marginTop: 3, lineHeight: 1.5 }}>{sub}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#171717' }}>{label}</div>
+                    <div style={{ fontSize: 12, color: '#666666', marginTop: 3, lineHeight: 1.5 }}>{sub}</div>
                   </div>
                 </div>
               ))}
             </div>
 
             <a
-              href="/workflow"
+              href="/app"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -409,7 +456,7 @@ function HeroSection() {
             top: p.y,
             width: p.size,
             height: p.size,
-            background: '#ffffff',
+            background: '#6D00FF',
             borderRadius: '50%',
             pointerEvents: 'none',
             animation: 'anStar 1.4s ease-out forwards',
@@ -418,10 +465,10 @@ function HeroSection() {
       ))}
 
       <div style={{ maxWidth: 1120, margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 1 }}>
-        <div className="an-hero-badge">
+        <div className="an-hero-badge" style={{ background: '#f8f4ff', color: '#6D00FF', border: '1px solid #000000' }}>
           <AnchorGlyph color="#6D00FF" size={16} />
           Built on KeeperHub
-          <span style={{ opacity: 0.35 }}>·</span>
+          <span style={{ opacity: 0.5 }}>·</span>
           Pendle · Aave · Superfluid
         </div>
 
@@ -433,7 +480,7 @@ function HeroSection() {
             fontStyle: 'italic',
             letterSpacing: '-0.04em',
             lineHeight: 1.02,
-            color: '#ffffff',
+            color: '#171717',
             maxWidth: 900,
             marginBottom: 28,
           }}
@@ -442,13 +489,13 @@ function HeroSection() {
           <br />
           never go stale
           <br />
-          <span style={{ color: '#ffffff', opacity: 0.75 }}>on KeeperHub</span>
+          <span style={{ color: '#6D00FF' }}>on KeeperHub</span>
         </h1>
 
         <p
           style={{
             fontSize: 'clamp(15px, 2vw, 18px)',
-            color: 'rgba(255,255,255,0.78)',
+            color: '#555555',
             maxWidth: 560,
             lineHeight: 1.72,
             marginBottom: 40,
@@ -460,12 +507,12 @@ function HeroSection() {
 
         <div className="an-hero-btns">
           <a
-            href="/workflow"
+            href="/app"
             className="an-hero-btn"
             style={{
-              background: '#ffffff',
+              background: '#6D00FF',
               border: 'none',
-              color: '#6D00FF',
+              color: '#ffffff',
               fontWeight: 800,
               display: 'inline-flex',
               alignItems: 'center',
@@ -484,8 +531,8 @@ function HeroSection() {
             className="an-hero-btn"
             style={{
               background: 'transparent',
-              border: '2px solid rgba(255,255,255,0.3)',
-              color: '#ffffff',
+              border: '2px solid #000000',
+              color: '#171717',
               fontWeight: 700,
               fontFamily: 'inherit',
               display: 'inline-flex',
@@ -511,8 +558,8 @@ export default function LandingPage() {
 
       <nav className="an-nav">
         <span style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <AnchorGlyph color="#ffffff" size={30} />
-          <span style={{ fontFamily: 'var(--font-outfit)', fontWeight: 900, fontSize: 20, color: '#ffffff', letterSpacing: '-0.02em' }}>Anchor</span>
+          <AnchorGlyph color="#6D00FF" size={30} />
+          <span style={{ fontFamily: 'var(--font-outfit)', fontWeight: 900, fontSize: 20, color: '#171717', letterSpacing: '-0.02em' }}>Anchor</span>
         </span>
         <a
           href="/app"
@@ -520,8 +567,8 @@ export default function LandingPage() {
             marginLeft: 'auto',
             height: 34,
             padding: '0 20px',
-            background: '#ffffff',
-            color: '#6D00FF',
+            background: '#6D00FF',
+            color: '#ffffff',
             fontSize: 13,
             fontWeight: 800,
             display: 'inline-flex',
@@ -671,11 +718,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="an-section" style={{ background: '#6D00FF' }}>
+      <section className="an-section" style={{ background: '#ffffff' }}>
         <div className="an-section-inner">
           <div style={{ marginBottom: 48, textAlign: 'center' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.5)', marginBottom: 12 }}>Why KeeperHub</div>
-            <h2 style={{ fontFamily: 'var(--font-outfit)', fontSize: 'clamp(24px, 3.5vw, 44px)', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#6D00FF', marginBottom: 12 }}>Why KeeperHub</div>
+            <h2 style={{ fontFamily: 'var(--font-outfit)', fontSize: 'clamp(24px, 3.5vw, 44px)', fontWeight: 900, color: '#171717', letterSpacing: '-0.02em', marginBottom: 16 }}>
               Execution you don&rsquo;t have to trust blindly.
             </h2>
           </div>
@@ -687,39 +734,39 @@ export default function LandingPage() {
               { stat: 'MCP + REST', lbl: 'Two ways to build', sub: 'Draft with AI, or call the API directly' },
               { stat: 'Source', lbl: 'Everything verified', sub: 'No plugin ID or config shape was guessed' },
             ].map((item) => (
-              <div key={item.lbl} style={{ padding: 'clamp(20px, 3vw, 36px)', background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.2)' }}>
-                <div style={{ fontFamily: 'var(--font-outfit)', fontSize: 'clamp(20px, 2.6vw, 28px)', fontWeight: 900, color: '#ffffff', marginBottom: 8 }}>{item.stat}</div>
-                <div style={{ fontSize: 'clamp(12px, 1.4vw, 15px)', fontWeight: 700, color: 'rgba(255,255,255,0.9)', marginBottom: 4 }}>{item.lbl}</div>
-                <div style={{ fontSize: 'clamp(11px, 1.2vw, 13px)', color: 'rgba(255,255,255,0.5)' }}>{item.sub}</div>
+              <div key={item.lbl} style={{ padding: 'clamp(20px, 3vw, 36px)', background: '#ffffff', border: '2px solid #000000' }}>
+                <div style={{ fontFamily: 'var(--font-outfit)', fontSize: 'clamp(20px, 2.6vw, 28px)', fontWeight: 900, color: '#171717', marginBottom: 8 }}>{item.stat}</div>
+                <div style={{ fontSize: 'clamp(12px, 1.4vw, 15px)', fontWeight: 700, color: '#171717', marginBottom: 4 }}>{item.lbl}</div>
+                <div style={{ fontSize: 'clamp(11px, 1.2vw, 13px)', color: '#666666' }}>{item.sub}</div>
               </div>
             ))}
           </div>
 
-          <div style={{ borderTop: '1.5px solid rgba(255,255,255,0.2)', paddingTop: 56, textAlign: 'center' }}>
+          <div style={{ paddingTop: 8, textAlign: 'center' }}>
             <h2
               style={{
                 fontFamily: 'var(--font-outfit)',
                 fontSize: 'clamp(26px, 4vw, 52px)',
                 fontWeight: 900,
                 fontStyle: 'italic',
-                color: '#ffffff',
+                color: '#171717',
                 letterSpacing: '-0.03em',
                 marginBottom: 16,
               }}
             >
               Built once. Maintained forever.
             </h2>
-            <p style={{ fontSize: 'clamp(14px, 1.8vw, 17px)', color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, maxWidth: 500, margin: '0 auto 36px' }}>
+            <p style={{ fontSize: 'clamp(14px, 1.8vw, 17px)', color: '#666666', lineHeight: 1.7, maxWidth: 500, margin: '0 auto 36px' }}>
               Point Anchor at a Pendle, Aave, or Superfluid position and let KeeperHub keep it upright — no dashboard,
               no reminders, no forgetting.
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <a href="/workflow" style={{ height: 54, padding: '0 40px', background: '#ffffff', color: '#6D00FF', fontSize: 15, fontWeight: 800, display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>
+              <a href="/app" style={{ height: 54, padding: '0 40px', background: '#6D00FF', color: '#ffffff', fontSize: 15, fontWeight: 800, display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>
                 See the protocols →
               </a>
               <a
                 href="/proof"
-                style={{ height: 54, padding: '0 40px', background: 'transparent', border: '2px solid rgba(255,255,255,0.4)', color: '#ffffff', fontSize: 15, fontWeight: 700, display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}
+                style={{ height: 54, padding: '0 40px', background: 'transparent', border: '2px solid #000000', color: '#171717', fontSize: 15, fontWeight: 700, display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}
               >
                 See the proof
               </a>
@@ -734,7 +781,7 @@ export default function LandingPage() {
             <AnchorGlyph color="#6D00FF" size={18} />
             Anchor
           </a>
-          <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>
+          <div style={{ fontSize: 11, color: '#171717', marginTop: 4 }}>
             Positions on Pendle, Aave, and Superfluid don&rsquo;t sleep. Powered by KeeperHub, neither does their upkeep.
           </div>
         </div>
