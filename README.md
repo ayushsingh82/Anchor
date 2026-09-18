@@ -44,21 +44,10 @@ workflows.
   workflows via `ai_generate_workflow` / `validate_workflow` before ever
   calling `create_workflow` for real (see Status below for why).
 
-## Status
-
 Full done/left tracking, including which contract addresses are real
 (pulled from open-source registries) vs. still placeholder, lives in
 [`PLAN.md`](./PLAN.md) — kept current as the build progresses rather than
-duplicated here. Short version:
-
-- ✅ Workflow schema, all three protocols' plugin actions, REST client, MCP
-  install — all confirmed against real docs.
-- ⚠️ The condition/branch node's exact JSON shape and the cross-node
-  output-reference syntax are still unconfirmed (both 404'd when checked
-  directly against the docs). Plan: draft it once via KeeperHub's own AI
-  canvas, then reconcile.
-- ⚠️ No live KeeperHub account wired in yet — needed for the submission's
-  required real executed transaction.
+duplicated here.
 
 ## Getting started
 
@@ -82,24 +71,6 @@ moves.
 ```bash
 claude mcp add --transport http --scope user keeperhub https://app.keeperhub.com/mcp \
   --header "Authorization: Bearer kh_your_key_here"
-```
-
-## Project structure
-
-```
-src/
-├── app/
-│   ├── page.tsx                        Landing page (hero, 3-protocol section, footer)
-│   └── globals.css                     Design tokens + entrance animation
-├── components/
-│   └── AeroShards.tsx                  Vendored WebGPU background effect (installed, not currently used)
-└── lib/keeperhub/
-    ├── types.ts                        Workflow/node/edge types
-    ├── client.ts                       REST API client (auth, create/list/history)
-    └── protocols/
-        ├── pendle/{actions,workflow}.ts
-        ├── aave/{actions,workflow}.ts
-        └── superfluid/{actions,workflow}.ts
 ```
 
 ## Docs

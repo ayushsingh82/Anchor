@@ -7,9 +7,6 @@ export default function ProofPage() {
         <Link href="/" className="logo">
           Anchor
         </Link>
-        <Link href="/" className="page-back">
-          ← Home
-        </Link>
       </header>
 
       <main className="page-body">
@@ -19,13 +16,13 @@ export default function ProofPage() {
           This page is wired to call <code>getWorkflowHistory()</code> from{' '}
           <code>src/lib/keeperhub/client.ts</code> and list real executions —
           trigger, submitted transaction, gas used, outcome, all pulled straight
-          from KeeperHub&apos;s own audit trail. There&apos;s no live KeeperHub
-          account behind this project yet, so there&apos;s nothing real to show
-          here — see{' '}
+          from KeeperHub&apos;s own audit trail. The org and API key behind
+          this project are live, but no workflow has executed a real
+          transaction yet, so there&apos;s nothing real to show here — see{' '}
           <a href="https://github.com/ayushsingh82/Anchor/blob/main/PLAN.md" target="_blank" rel="noreferrer">
             PLAN.md
           </a>{' '}
-          for what&apos;s left before that changes.
+          for current status.
         </p>
         <div className="proof-placeholder">
           <p>Once a workflow has run at least once, this becomes:</p>

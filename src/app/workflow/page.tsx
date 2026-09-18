@@ -47,9 +47,6 @@ export default function WorkflowPage() {
         <Link href="/" className="logo">
           Anchor
         </Link>
-        <Link href="/" className="page-back">
-          ← Home
-        </Link>
       </header>
 
       <main className="page-body">
@@ -58,12 +55,15 @@ export default function WorkflowPage() {
         <p className="page-lead">
           Real node/edge JSON built by the functions in{' '}
           <code>src/lib/keeperhub/protocols/*/workflow.ts</code>, rendered with
-          placeholder addresses. The condition/branch node between the check and
-          the action is still an open item — see{' '}
+          placeholder addresses. The Condition gate between the check and the
+          action is source-verified against KeeperHub&apos;s own repo, not
+          guessed — see{' '}
           <a href="https://github.com/ayushsingh82/Anchor/blob/main/PLAN.md" target="_blank" rel="noreferrer">
             PLAN.md
-          </a>
-          .
+          </a>{' '}
+          for the full trail, or the{' '}
+          <Link href="/app">dashboard</Link> for a friendlier view of the same
+          data.
         </p>
 
         {WORKFLOWS.map((w) => (
